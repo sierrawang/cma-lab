@@ -47,83 +47,189 @@ def convert(md):
 
 
 def decorate(body):
-    # Code blocks: a label and a Copy button.
+    # Code blocks: a small label and a Copy button.
     def code(match):
         lang = match.group(1) or ""
-        return (f'<div class="code"><div class="codebar"><span>{LABELS.get(lang, lang)}</span>'
-                f'<button class="copy">Copy</button></div><pre><code>{match.group(2)}</code></pre></div>')
+        label = f'<span class="lang">{LABELS.get(lang, lang)}</span>' if LABELS.get(lang, lang) else ""
+        return (f'<div class="code">{label}<button class="copy" aria-label="Copy">Copy</button>'
+                f'<pre><code>{match.group(2)}</code></pre></div>')
     body = re.sub(r'<pre><code(?: class="language-(\w+)")?>(.*?)</code></pre>', code, body, flags=re.S)
-    # "✅ You know it worked when…" paragraphs (and the list after them) become green callouts.
+    # "✅ You know it worked when…" paragraphs (and the list after them) become callouts.
     body = re.sub(r"<p>✅ (.*?)</p>\s*(<ul>.*?</ul>)?", lambda m: f'<div class="check"><p>{m.group(1)}</p>{m.group(2) or ""}</div>',
                   body, flags=re.S)
     body = body.replace("<blockquote>", '<div class="note">').replace("</blockquote>", "</div>")
     body = body.replace("<table>", '<div class="tablewrap"><table>').replace("</table>", "</table></div>")
+    body = re.sub(r"<hr\s*/?>", "", body)
     return body
+
+
+def sections(body):
+    """Split the page at each ## heading. Returns (intro, [(id, title, subsections, html)])."""
+    parts = re.split(r'(?=<h2 id=")', body)
+    out = []
+    for part in parts[1:]:
+        sid, title = re.match(r'<h2 id="([^"]+)">(.*?)</h2>', part).groups()
+        subs = re.findall(r'<h3 id="([^"]+)">(.*?)</h3>', part)
+        out.append((sid, title, subs, part))
+    return parts[0], out
+
+
+def build(md):
+    body = decorate(convert(md))
+    intro, secs = sections(body)
+    intro = re.sub(r"<h1[^>]*>.*?</h1>", "", intro, flags=re.S)
+    intro = re.sub(r'<div class="tablewrap">.*?</div>', "", intro, count=1, flags=re.S)  # the sidebar replaces the contents table
+    nav, main = [], []
+    for sid, title, subs, part in secs:
+        trackable = not title.lower().startswith(("if something", "extensions"))
+        box = (f'<input type="checkbox" class="done" data-id="{sid}" aria-label="Mark {html.escape(re.sub("<.*?>", "", title))} done">'
+               if trackable else '<span class="nobox"></span>')
+        sub = "".join(f'<a class="sub" href="#{i}">{t}</a>' for i, t in subs)
+        nav.append(f'<div class="navsec" data-id="{sid}"><div class="navrow">{box}<a class="top" href="#{sid}">{title}</a></div>'
+                   f'<div class="subs">{sub}</div></div>')
+        if trackable:
+            part += (f'<div class="finish"><button class="mark" data-id="{sid}">Mark “{re.sub("<.*?>", "", title)}” as done</button></div>')
+        main.append(f'<section id="sec-{sid}">{part}</section>')
+    return "".join(nav), intro + "".join(main)
 
 
 PAGE = """<!doctype html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
 <title>{title}</title>
 <style>
-  :root {{ --ink: #1f2937; --muted: #6b7280; --line: #e5e7eb; --accent: #c2410c; --bg: #fbfaf8; }}
+  :root {{ --ink: #141413; --body: #3d3d3a; --muted: #73726c; --line: #e8e6dc; --soft: #f0eee6; --bg: #faf9f5;
+           --accent: #c6613f; --green: #4d7c4a; --serif: "Tiempos Headline", "Iowan Old Style", Georgia, serif;
+           --sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+           --mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace; }}
   * {{ box-sizing: border-box; }}
-  body {{ margin: 0; background: var(--bg); color: var(--ink); font: 17px/1.65 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }}
-  main {{ max-width: 780px; margin: 0 auto; padding: 48px 24px 120px; }}
-  h1 {{ font-size: 34px; line-height: 1.2; margin: 0 0 20px; letter-spacing: -0.01em; }}
-  h2 {{ font-size: 25px; margin: 56px 0 8px; padding-top: 24px; border-top: 1px solid var(--line); }}
-  h3 {{ font-size: 19px; margin: 36px 0 6px; }}
-  p, li {{ margin: 8px 0; }}
-  a {{ color: var(--accent); }}
-  hr {{ display: none; }}
-  code {{ font: 0.86em ui-monospace, SFMono-Regular, Menlo, monospace; background: #f1efeb; padding: 1px 5px; border-radius: 5px; }}
-  .code {{ margin: 14px 0; border: 1px solid #2d3340; border-radius: 10px; overflow: hidden; background: #161b22; }}
-  .codebar {{ min-height: 30px; display: flex; justify-content: space-between; align-items: center; padding: 6px 10px 6px 14px; background: #20262f;
-             color: #9ca3af; font-size: 12px; letter-spacing: .04em; text-transform: uppercase; }}
-  .copy {{ font: 12px -apple-system, sans-serif; color: #e5e7eb; background: #313845; border: 0; border-radius: 6px; padding: 4px 10px; cursor: pointer; }}
-  .copy:hover {{ background: #3d4553; }}
-  .code pre {{ margin: 0; padding: 14px 16px; white-space: pre-wrap; overflow-wrap: anywhere; }}
-  .code code {{ background: none; padding: 0; color: #e6edf3; font-size: 14px; line-height: 1.55; }}
-  .tablewrap {{ overflow-x: auto; margin: 16px 0; }}
-  table {{ border-collapse: collapse; width: 100%; font-size: 15px; background: #fff; border: 1px solid var(--line); border-radius: 10px; }}
-  th, td {{ text-align: left; padding: 9px 12px; border-bottom: 1px solid var(--line); vertical-align: top; }}
-  th {{ font-size: 13px; color: var(--muted); font-weight: 600; background: #f7f6f3; }}
+  html {{ scroll-behavior: smooth; scroll-padding-top: 24px; }}
+  body {{ margin: 0; background: var(--bg); color: var(--body); font: 16px/1.7 var(--sans); -webkit-font-smoothing: antialiased; }}
+  .layout {{ display: flex; min-height: 100vh; }}
+  nav {{ position: sticky; top: 0; height: 100vh; width: 290px; flex: none; overflow-y: auto;
+         padding: 32px 20px 40px 28px; border-right: 1px solid var(--line); }}
+  nav .brand {{ font: 500 19px/1.3 var(--serif); color: var(--ink); margin: 0 0 6px; }}
+  nav .progress {{ font-size: 13px; color: var(--muted); margin-bottom: 22px; }}
+  nav .bar {{ height: 3px; background: var(--soft); border-radius: 3px; margin-top: 8px; overflow: hidden; }}
+  nav .bar span {{ display: block; height: 100%; width: 0; background: var(--accent); transition: width .3s; }}
+  .navsec {{ margin-bottom: 4px; }}
+  .navrow {{ display: flex; align-items: center; gap: 10px; }}
+  .navrow a.top {{ flex: 1; padding: 6px 10px; border-radius: 8px; color: var(--ink); font-size: 15px; font-weight: 500; text-decoration: none; }}
+  .navrow a.top:hover {{ background: var(--soft); }}
+  .navsec.active a.top {{ background: #ece9df; }}
+  .navsec.complete a.top {{ color: var(--muted); }}
+  .nobox {{ width: 17px; flex: none; }}
+  input.done {{ appearance: none; width: 17px; height: 17px; flex: none; margin: 0; border: 1.5px solid #c3c0b6; border-radius: 50%;
+                cursor: pointer; display: grid; place-content: center; background: #fff; }}
+  input.done:checked {{ background: var(--green); border-color: var(--green); }}
+  input.done:checked::after {{ content: ""; width: 4px; height: 8px; border: solid #fff; border-width: 0 2px 2px 0; transform: translateY(-1px) rotate(45deg); }}
+  .subs {{ display: none; margin: 2px 0 8px 27px; border-left: 1px solid var(--line); }}
+  .navsec.active .subs {{ display: block; }}
+  a.sub {{ display: block; padding: 3px 0 3px 12px; color: var(--muted); font-size: 14px; text-decoration: none; margin-left: -1px; border-left: 1px solid transparent; }}
+  a.sub:hover {{ color: var(--ink); }}
+  a.sub.active {{ color: var(--ink); border-left-color: var(--ink); }}
+  main {{ flex: 1; min-width: 0; }}
+  .content {{ max-width: 760px; margin: 0 auto; padding: 56px 40px 160px; }}
+  h1 {{ font: 500 40px/1.15 var(--serif); color: var(--ink); margin: 0 0 20px; letter-spacing: -0.01em; }}
+  h2 {{ font: 500 30px/1.25 var(--serif); color: var(--ink); margin: 72px 0 12px; }}
+  h3 {{ font: 600 18px/1.4 var(--sans); color: var(--ink); margin: 40px 0 6px; }}
+  p, li {{ margin: 10px 0; }}
+  strong {{ color: var(--ink); font-weight: 600; }}
+  a {{ color: var(--ink); text-decoration: underline; text-decoration-color: #b8b5aa; text-underline-offset: 3px; }}
+  a:hover {{ text-decoration-color: var(--ink); }}
+  :not(pre) > code {{ font: 0.875em var(--mono); color: var(--ink); background: var(--soft); padding: 2px 5px; border-radius: 5px; }}
+  .code {{ position: relative; margin: 14px 0 18px; background: #fff; border: 1px solid var(--line); border-radius: 12px; }}
+  .code pre {{ margin: 0; padding: 16px 120px 16px 18px; white-space: pre-wrap; overflow-wrap: anywhere; }}
+  .code code {{ font: 13.5px/1.5 var(--mono); color: var(--ink); }}
+  .code .lang {{ position: absolute; top: 8px; right: 62px; font-size: 11px; color: #a3a198; letter-spacing: .03em; }}
+  .copy {{ position: absolute; top: 6px; right: 8px; font: 500 12px var(--sans); color: var(--muted); background: #fff;
+           border: 1px solid var(--line); border-radius: 6px; padding: 2px 8px; cursor: pointer; opacity: .75; }}
+  .code:hover .copy {{ opacity: 1; }}
+  .copy:hover {{ color: var(--ink); border-color: #cfccc1; }}
+  .tablewrap {{ overflow-x: auto; margin: 18px 0; border: 1px solid var(--line); border-radius: 12px; background: #fff; }}
+  table {{ border-collapse: collapse; width: 100%; font-size: 15px; }}
+  th, td {{ text-align: left; padding: 11px 16px; border-bottom: 1px solid var(--line); vertical-align: top; }}
+  th {{ font-weight: 600; color: var(--ink); }}
   tr:last-child td {{ border-bottom: 0; }}
-  .check {{ margin: 18px 0; padding: 10px 16px; background: #ecfdf3; border: 1px solid #b7ebc9; border-radius: 10px; }}
-  .check p:first-child::before {{ content: "✓"; display: inline-block; width: 22px; height: 22px; margin-right: 8px; border-radius: 50%;
-                                  background: #16a34a; color: #fff; text-align: center; line-height: 22px; font-size: 13px; font-weight: 700; }}
-  .check ul {{ margin: 4px 0 4px 30px; padding-left: 16px; }}
-  .note {{ margin: 18px 0; padding: 10px 16px; background: #fff7ed; border: 1px solid #fed7aa; border-radius: 10px; }}
-  details {{ margin: 12px 0; background: #fff; border: 1px solid var(--line); border-radius: 10px; }}
-  summary {{ cursor: pointer; padding: 10px 14px; font-weight: 600; color: var(--accent); }}
-  details .inner {{ padding: 0 14px 6px; }}
-  .tabs {{ margin: 14px 0; background: #fff; border: 1px solid var(--line); border-radius: 10px; }}
-  .tabbar {{ display: flex; gap: 4px; padding: 8px 8px 0; border-bottom: 1px solid var(--line); }}
-  .tab {{ font: 600 14px -apple-system, sans-serif; color: var(--muted); background: none; border: 0; padding: 8px 14px;
-          border-bottom: 2px solid transparent; cursor: pointer; }}
-  .tab.on {{ color: var(--accent); border-bottom-color: var(--accent); }}
-  .pane {{ display: none; padding: 4px 16px 8px; }}
+  .check {{ margin: 20px 0; padding: 4px 18px 4px 20px; border-left: 3px solid var(--green); background: #f3f5ef; border-radius: 0 10px 10px 0; }}
+  .check ul {{ margin: 4px 0 8px; padding-left: 20px; }}
+  .note {{ margin: 20px 0; padding: 4px 18px 4px 20px; border-left: 3px solid var(--accent); background: #f7efe9; border-radius: 0 10px 10px 0; }}
+  details {{ margin: 12px 0; border: 1px solid var(--line); border-radius: 12px; background: #fff; }}
+  summary {{ cursor: pointer; padding: 10px 16px; font-weight: 500; color: var(--ink); }}
+  details .inner {{ padding: 0 16px 6px; }}
+  .tabs {{ margin: 14px 0 18px; }}
+  .tabbar {{ display: flex; gap: 6px; margin-bottom: 4px; }}
+  .tab {{ font: 500 15px var(--sans); color: var(--muted); background: none; border: 0; padding: 6px 14px; border-radius: 8px; cursor: pointer; }}
+  .tab:hover {{ color: var(--ink); }}
+  .tab.on {{ color: var(--ink); background: #ece9df; }}
+  .pane {{ display: none; }}
   .pane.on {{ display: block; }}
+  .finish {{ margin: 36px 0 0; }}
+  .mark {{ font: 500 14px var(--sans); color: var(--ink); background: #fff; border: 1px solid var(--line); border-radius: 999px;
+           padding: 8px 16px; cursor: pointer; }}
+  .mark:hover {{ border-color: #cfccc1; }}
+  .mark.on {{ background: #eef2ea; border-color: #c9d6c3; color: var(--green); }}
+  @media (max-width: 900px) {{ nav {{ display: none; }} .content {{ padding: 32px 20px 120px; }} }}
 </style></head>
-<body><main>
+<body><div class="layout">
+<nav>
+  <div class="brand">{title}</div>
+  <div class="progress"><span id="count">0</span> of <span id="total">0</span> done<div class="bar"><span id="fill"></span></div></div>
+  {nav}
+</nav>
+<main><div class="content">
+<h1>{title}</h1>
 {body}
-</main>
+</div></main>
+</div>
 <script>
   // Copy buttons
   document.querySelectorAll(".copy").forEach(button => button.addEventListener("click", async () => {{
     const text = button.closest(".code").querySelector("code").innerText.replace(/\\n$/, "");
     try {{ await navigator.clipboard.writeText(text); }}
     catch {{ const t = document.createElement("textarea"); t.value = text; document.body.appendChild(t); t.select(); document.execCommand("copy"); t.remove(); }}
-    button.textContent = "Copied!"; setTimeout(() => button.textContent = "Copy", 1500);
+    button.textContent = "Copied"; setTimeout(() => button.textContent = "Copy", 1500);
   }}));
-  // Computer tabs: picking one switches every set of tabs, and the page remembers it
+
+  // Computer tabs: picking one switches every set, and the page remembers it
+  const store = {{ get: k => {{ try {{ return localStorage.getItem(k); }} catch {{ return null; }} }},
+                  set: (k, v) => {{ try {{ localStorage.setItem(k, v); }} catch {{}} }} }};
   function pick(os) {{
     document.querySelectorAll(".tab").forEach(t => t.classList.toggle("on", t.dataset.os === os));
     document.querySelectorAll(".pane").forEach(p => p.classList.toggle("on", p.dataset.os === os));
-    try {{ localStorage.setItem("lab-os", os); }} catch {{}}
+    store.set("lab-os", os);
   }}
   document.querySelectorAll(".tab").forEach(t => t.addEventListener("click", () => pick(t.dataset.os)));
-  let saved = null; try {{ saved = localStorage.getItem("lab-os"); }} catch {{}}
-  pick(saved || (navigator.platform.toLowerCase().includes("mac") ? "Mac" : "Linux or Windows"));
+  pick(store.get("lab-os") || (navigator.platform.toLowerCase().includes("mac") ? "Mac" : "Linux or Windows"));
+
+  // Milestone checkmarks, saved in this browser
+  const done = new Set(JSON.parse(store.get("lab-done") || "[]"));
+  function render() {{
+    document.querySelectorAll("input.done").forEach(b => {{ b.checked = done.has(b.dataset.id); b.closest(".navsec").classList.toggle("complete", b.checked); }});
+    document.querySelectorAll(".mark").forEach(b => {{
+      const on = done.has(b.dataset.id); b.classList.toggle("on", on);
+      b.textContent = on ? "✓ Done" : b.dataset.label;
+    }});
+    const total = document.querySelectorAll("input.done").length;
+    document.getElementById("count").textContent = [...done].filter(id => document.querySelector(`input.done[data-id="${{id}}"]`)).length;
+    document.getElementById("total").textContent = total;
+    document.getElementById("fill").style.width = (100 * done.size / Math.max(total, 1)) + "%";
+    store.set("lab-done", JSON.stringify([...done]));
+  }}
+  function toggle(id, on) {{ on ? done.add(id) : done.delete(id); render(); }}
+  document.querySelectorAll(".mark").forEach(b => {{ b.dataset.label = b.textContent; b.addEventListener("click", () => toggle(b.dataset.id, !done.has(b.dataset.id))); }});
+  document.querySelectorAll("input.done").forEach(b => b.addEventListener("change", () => toggle(b.dataset.id, b.checked)));
+  render();
+
+  // Highlight where you are in the sidebar
+  const heads = [...document.querySelectorAll(".content h2, .content h3")];
+  function spy() {{
+    let current = heads[0];
+    for (const h of heads) if (h.getBoundingClientRect().top < 120) current = h;
+    const sec = current.tagName === "H2" ? current : current.closest("section")?.querySelector("h2");
+    document.querySelectorAll(".navsec").forEach(n => n.classList.toggle("active", sec && n.dataset.id === sec.id));
+    document.querySelectorAll("a.sub").forEach(a => a.classList.toggle("active", a.getAttribute("href") === "#" + current.id));
+  }}
+  document.addEventListener("scroll", spy, {{ passive: true }}); spy();
 </script>
 </body></html>
 """
@@ -132,5 +238,6 @@ PAGE = """<!doctype html>
 if __name__ == "__main__":
     md = SOURCE.read_text()
     title = re.search(r"^# (.+)$", md, re.M).group(1)
-    OUT.write_text(PAGE.format(title=html.escape(title), body=decorate(convert(md))))
-    print("wrote", OUT.name)
+    nav, body = build(md)
+    OUT.write_text(PAGE.format(title=html.escape(title), nav=nav, body=body))
+    print("wrote", OUT.relative_to(HERE))
