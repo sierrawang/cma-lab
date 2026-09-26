@@ -1,0 +1,5 @@
+name: travel-env-yourname
+config:
+  type: cloud
+  networking:
+    type: unrestricted

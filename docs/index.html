@@ -1,0 +1,633 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Lab: Build a Travel Agent with Claude Managed Agents</title>
+<style>
+  :root { --ink: #1f2937; --muted: #6b7280; --line: #e5e7eb; --accent: #c2410c; --bg: #fbfaf8; }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--ink); font: 17px/1.65 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+  main { max-width: 780px; margin: 0 auto; padding: 48px 24px 120px; }
+  h1 { font-size: 34px; line-height: 1.2; margin: 0 0 20px; letter-spacing: -0.01em; }
+  h2 { font-size: 25px; margin: 56px 0 8px; padding-top: 24px; border-top: 1px solid var(--line); }
+  h3 { font-size: 19px; margin: 36px 0 6px; }
+  p, li { margin: 8px 0; }
+  a { color: var(--accent); }
+  hr { display: none; }
+  code { font: 0.86em ui-monospace, SFMono-Regular, Menlo, monospace; background: #f1efeb; padding: 1px 5px; border-radius: 5px; }
+  .code { margin: 14px 0; border: 1px solid #2d3340; border-radius: 10px; overflow: hidden; background: #161b22; }
+  .codebar { min-height: 30px; display: flex; justify-content: space-between; align-items: center; padding: 6px 10px 6px 14px; background: #20262f;
+             color: #9ca3af; font-size: 12px; letter-spacing: .04em; text-transform: uppercase; }
+  .copy { font: 12px -apple-system, sans-serif; color: #e5e7eb; background: #313845; border: 0; border-radius: 6px; padding: 4px 10px; cursor: pointer; }
+  .copy:hover { background: #3d4553; }
+  .code pre { margin: 0; padding: 14px 16px; white-space: pre-wrap; overflow-wrap: anywhere; }
+  .code code { background: none; padding: 0; color: #e6edf3; font-size: 14px; line-height: 1.55; }
+  .tablewrap { overflow-x: auto; margin: 16px 0; }
+  table { border-collapse: collapse; width: 100%; font-size: 15px; background: #fff; border: 1px solid var(--line); border-radius: 10px; }
+  th, td { text-align: left; padding: 9px 12px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  th { font-size: 13px; color: var(--muted); font-weight: 600; background: #f7f6f3; }
+  tr:last-child td { border-bottom: 0; }
+  .check { margin: 18px 0; padding: 10px 16px; background: #ecfdf3; border: 1px solid #b7ebc9; border-radius: 10px; }
+  .check p:first-child::before { content: "✓"; display: inline-block; width: 22px; height: 22px; margin-right: 8px; border-radius: 50%;
+                                  background: #16a34a; color: #fff; text-align: center; line-height: 22px; font-size: 13px; font-weight: 700; }
+  .check ul { margin: 4px 0 4px 30px; padding-left: 16px; }
+  .note { margin: 18px 0; padding: 10px 16px; background: #fff7ed; border: 1px solid #fed7aa; border-radius: 10px; }
+  details { margin: 12px 0; background: #fff; border: 1px solid var(--line); border-radius: 10px; }
+  summary { cursor: pointer; padding: 10px 14px; font-weight: 600; color: var(--accent); }
+  details .inner { padding: 0 14px 6px; }
+  .tabs { margin: 14px 0; background: #fff; border: 1px solid var(--line); border-radius: 10px; }
+  .tabbar { display: flex; gap: 4px; padding: 8px 8px 0; border-bottom: 1px solid var(--line); }
+  .tab { font: 600 14px -apple-system, sans-serif; color: var(--muted); background: none; border: 0; padding: 8px 14px;
+          border-bottom: 2px solid transparent; cursor: pointer; }
+  .tab.on { color: var(--accent); border-bottom-color: var(--accent); }
+  .pane { display: none; padding: 4px 16px 8px; }
+  .pane.on { display: block; }
+</style></head>
+<body><main>
+<h1 id="lab-build-a-travel-agent-with-claude-managed-agents">Lab: Build a Travel Agent with Claude Managed Agents</h1>
+<p><strong>Time:</strong> about 60 minutes</p>
+<p><strong>You'll build:</strong> a travel agent that searches real flights, checks your points, and helps you book, running on Claude Managed Agents. You'll create every file yourself; this page shows you exactly what goes in each one.</p>
+<div class="tablewrap"><table>
+<thead>
+<tr>
+<th>Part</th>
+<th>What you'll do</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><a href="#before-you-start">Before you start</a></td>
+<td>Get your environment set up</td>
+</tr>
+<tr>
+<td><a href="#milestone-1-chat-with-your-agent">Milestone 1</a></td>
+<td>Chat with your agent</td>
+</tr>
+<tr>
+<td><a href="#milestone-2-find-real-flights">Milestone 2</a></td>
+<td>Find real flights (MCP + vault)</td>
+</tr>
+<tr>
+<td><a href="#milestone-3-use-my-points">Milestone 3</a></td>
+<td>Use your points (skill + custom tool)</td>
+</tr>
+<tr>
+<td><a href="#milestone-4-ask-before-booking">Milestone 4</a></td>
+<td>Ask before booking</td>
+</tr>
+<tr>
+<td><a href="#extensions-optional">Extensions</a></td>
+<td>Hotels, memory, price alerts, a web app</td>
+</tr>
+</tbody>
+</table></div>
+<p>Each step ends with <strong>✅ You know it worked when…</strong> so you can check your progress as you go.</p>
+<hr />
+<h2 id="before-you-start">Before you start</h2>
+<h3 id="a-python-310-or-newer">A. Python 3.10 or newer</h3>
+<p>Check what you have:</p>
+<div class="code"><div class="codebar"><span>Terminal</span><button class="copy">Copy</button></div><pre><code>python3 --version
+</code></pre></div>
+<p>If it says 3.10 or higher, skip ahead. If not, install it:</p>
+<div class="tabs"><div class="tabbar"><button class="tab" data-os="Mac">Mac</button><button class="tab" data-os="Linux or Windows">Linux or Windows</button></div><div class="pane" data-os="Mac"><p>Install <a href="https://brew.sh">Homebrew</a> if you don't have it, then:</p>
+<div class="code"><div class="codebar"><span>Terminal</span><button class="copy">Copy</button></div><pre><code>brew install python@3.12
+</code></pre></div>
+<p>Check it worked:</p>
+<div class="code"><div class="codebar"><span>Terminal</span><button class="copy">Copy</button></div><pre><code>python3.12 --version
+</code></pre></div>
+<p>Use <code>python3.12</code> wherever this lab says <code>python3</code>.</p></div><div class="pane" data-os="Linux or Windows"><p>On Windows, first install WSL (open PowerShell as administrator, run <code>wsl --install</code>, and restart), then do everything in this lab inside the Ubuntu terminal. Then:</p>
+<div class="code"><div class="codebar"><span>Terminal</span><button class="copy">Copy</button></div><pre><code>sudo apt update &amp;&amp; sudo apt install -y python3 python3-venv
+</code></pre></div>
+<p>Check it worked:</p>
+<div class="code"><div class="codebar"><span>Terminal</span><button class="copy">Copy</button></div><pre><code>python3 --version
+</code></pre></div></div></div>
+<h3 id="b-install-ant-anthropics-command-line-tool">B. Install ant, Anthropic's command-line tool</h3>
+<p>Click your computer:</p>
+<div class="tabs"><div class="tabbar"><button class="tab" data-os="Mac">Mac</button><button class="tab" data-os="Linux or Windows">Linux or Windows</button></div><div class="pane" data-os="Mac"><div class="code"><div class="codebar"><span>Terminal</span><button class="copy">Copy</button></div><pre><code>brew install anthropics/tap/ant
+</code></pre></div>
+<p>The first install can take a few minutes.</p></div><div class="pane" data-os="Linux or Windows"><p>Find the latest version number at <a href="https://github.com/anthropics/anthropic-cli/releases">github.com/anthropics/anthropic-cli/releases</a> (for example 1.35.0). Put it on the first line, then run both lines together:</p>
+<div class="code"><div class="codebar"><span>Terminal</span><button class="copy">Copy</button></div><pre><code>VERSION=1.35.0
+curl -fsSL &quot;https://github.com/anthropics/anthropic-cli/releases/download/v${VERSION}/ant_${VERSION}_linux_$(uname -m | sed -e s/x86_64/amd64/ -e s/aarch64/arm64/).tar.gz&quot; | sudo tar -xz -C /usr/local/bin ant
+</code></pre></div></div></div>
+<p>Check it worked:</p>
+<div class="code"><div class="codebar"><span>Terminal</span><button class="copy">Copy</button></div><pre><code>ant --version
+</code></pre></div>
+<div class="check"><p><strong>You know it worked when</strong> it prints 1.30.0 or newer.</p></div><h3 id="c-make-your-project-folder">C. Make your project folder</h3>
+<p>Create the folder and go into it:</p>
+<div class="code"><div class="codebar"><span>Terminal</span><button class="copy">Copy</button></div><pre><code>mkdir travel-agent &amp;&amp; cd travel-agent
+</code></pre></div>
+<p>Create a Python environment for the project and turn it on:</p>
+<div class="code"><div class="codebar"><span>Terminal</span><button class="copy">Copy</button></div><pre><code>python3 -m venv .venv &amp;&amp; source .venv/bin/activate
+</code></pre></div>
+<p>Install Anthropic's Python library:</p>
+<div class="code"><div class="codebar"><span>Terminal</span><button class="copy">Copy</button></div><pre><code>pip install anthropic
+</code></pre></div>
+<h3 id="d-your-anthropic-api-key">D. Your Anthropic API key</h3>
+<ol>
+<li>Go to <a href="https://console.anthropic.com">console.anthropic.com</a> and sign in (or create an account).</li>
+<li>Open <strong>Settings → API keys</strong> and click <strong>Create key</strong>.</li>
+<li>Name it <code>travel-agent-lab</code>.</li>
+<li>Copy the key (it starts with <code>sk-ant-</code>). In your <code>travel-agent</code> folder, create a file named <code>.env</code> and paste it in like this:</li>
+</ol>
+<div class="code"><div class="codebar"><span></span><button class="copy">Copy</button></div><pre><code>ANTHROPIC_API_KEY=sk-ant-...
+</code></pre></div>
+<h3 id="e-your-serpapi-api-key">E. Your SerpApi API key</h3>
+<p>SerpApi gives your agent live Google Flights results. It's free and takes about 2 minutes.</p>
+<ol>
+<li>Go to <a href="https://serpapi.com/users/sign_up">serpapi.com/users/sign_up</a> and sign up with Google, GitHub, or email. You'll verify an email address and a phone number. No credit card.</li>
+<li>Choose the <strong>Free</strong> plan (250 searches a month; this lab uses about 20).</li>
+<li>Open <a href="https://serpapi.com/manage-api-key">serpapi.com/manage-api-key</a>, copy your <strong>Private API Key</strong>, and add it to <code>.env</code> on a new line:</li>
+</ol>
+<div class="code"><div class="codebar"><span></span><button class="copy">Copy</button></div><pre><code>SERPAPI_API_KEY=...
+</code></pre></div>
+<h3 id="f-load-your-keys">F. Load Your Keys</h3>
+<p>In the <code>travel-agent</code> folder, you should now have a file named <code>.env</code> with your two keys:</p>
+<div class="code"><div class="codebar"><span></span><button class="copy">Copy</button></div><pre><code>ANTHROPIC_API_KEY=sk-ant-...
+SERPAPI_API_KEY=...
+</code></pre></div>
+<p>Load them into your terminal:</p>
+<div class="code"><div class="codebar"><span>Terminal</span><button class="copy">Copy</button></div><pre><code>set -a; source .env; set +a
+</code></pre></div>
+<div class="note">
+<p><strong>In every new terminal window</strong>, go to your <code>travel-agent</code> folder and run this line first:</p>
+</div>
+<div class="code"><div class="codebar"><span>Terminal</span><button class="copy">Copy</button></div><pre><code>source .venv/bin/activate &amp;&amp; set -a &amp;&amp; source .env &amp;&amp; set +a
+</code></pre></div>
+<p>Check it worked:</p>
+<div class="code"><div class="codebar"><span>Terminal</span><button class="copy">Copy</button></div><pre><code>ant auth status
+</code></pre></div>
+<div class="check"><p><strong>You know it worked when</strong> it shows your key (starting <code>sk-ant-</code>) as the active credential.</p></div><hr />
+<h2 id="milestone-1-chat-with-your-agent">Milestone 1: Chat with your agent</h2>
+<p><strong>Goal:</strong> describe the agent and its container, upload them, and chat with the agent in your terminal.</p>
+<p>At the end of this milestone, your folder looks like this:</p>
+<div class="code"><div class="codebar"><span></span><button class="copy">Copy</button></div><pre><code>travel-agent/
+├── .env
+├── agents/travel-agent.md
+├── environments/travel-env.yaml
+├── travel_agent.py
+└── chat.py
+</code></pre></div>
+<h3 id="11-describe-the-agent">1.1 Describe the agent</h3>
+<p>Create <code>agents/travel-agent.md</code>. The part between the <code>---</code> lines is the agent's settings. Everything below it is the <strong>system prompt</strong>: your instructions to Claude.</p>
+<div class="code"><div class="codebar"><span>Markdown</span><button class="copy">Copy</button></div><pre><code>---
+name: Travel Agent
+model: claude-opus-5
+tools:
+  - type: agent_toolset_20260401
+---
+You are the travel agent inside My Travel App. You help travelers plan and book trips.
+Keep every reply to 1-3 short sentences, in plain text. No Markdown.
+When you recommend something, end with one line that starts with &quot;Why:&quot;.
+</code></pre></div>
+<p><code>agent_toolset_20260401</code> is Anthropic's built-in toolset (bash, files, web search); the date is its version. Feel free to change the prompt.</p>
+<h3 id="12-describe-its-container">1.2 Describe its container</h3>
+<p>Create <code>environments/travel-env.yaml</code>. <strong>Replace <code>yourname</code> with your name</strong>, since environment names must be unique in your workspace.</p>
+<div class="code"><div class="codebar"><span>YAML</span><button class="copy">Copy</button></div><pre><code>name: travel-env-yourname
+config:
+  type: cloud
+  networking:
+    type: unrestricted
+</code></pre></div>
+<h3 id="13-upload-both">1.3 Upload both</h3>
+<p>First, preview what will happen. Nothing changes yet:</p>
+<div class="code"><div class="codebar"><span>Terminal</span><button class="copy">Copy</button></div><pre><code>ant apply --dry-run agents/travel-agent.md environments/travel-env.yaml
+</code></pre></div>
+<p>Then upload them, and answer <code>y</code> when it asks:</p>
+<div class="code"><div class="codebar"><span>Terminal</span><button class="copy">Copy</button></div><pre><code>ant apply agents/travel-agent.md environments/travel-env.yaml
+</code></pre></div>
+<div class="check"><p><strong>You know it worked when</strong> you see <code>created</code> next to both files, and a new file, <code>claude-lock.json</code>, appears. It holds your agent's ID (<code>agent_…</code>) and your environment's ID (<code>env_…</code>).</p></div><h3 id="14-write-the-code-that-talks-to-your-agent">1.4 Write the code that talks to your agent</h3>
+<p>Create <code>travel_agent.py</code>. Most of it is given; <strong>you write <code>run_turn()</code></strong> in the next step.</p>
+<div class="code"><div class="codebar"><span>Python</span><button class="copy">Copy</button></div><pre><code>&quot;&quot;&quot;Talks to your Travel Agent on Claude Managed Agents.&quot;&quot;&quot;
+import json
+
+import anthropic
+
+client = anthropic.Anthropic()
+
+# The IDs that `ant apply` saved
+lock = json.load(open(&quot;claude-lock.json&quot;))[&quot;resources&quot;]
+AGENT_ID = lock[&quot;./agents/travel-agent.md&quot;][&quot;id&quot;]
+ENV_ID = lock[&quot;./environments/travel-env.yaml&quot;][&quot;id&quot;]
+
+
+def start_session():
+    session = client.beta.sessions.create(agent=AGENT_ID, environment_id=ENV_ID)
+    return session.id
+
+
+def send_message(session_id, text):
+    client.beta.sessions.events.send(
+        session_id=session_id,
+        events=[{&quot;type&quot;: &quot;user.message&quot;, &quot;content&quot;: [{&quot;type&quot;: &quot;text&quot;, &quot;text&quot;: text}]}],
+    )
+
+
+def run_turn(session_id, text):
+    pass  # you'll write this in 1.5
+</code></pre></div>
+<h3 id="15-write-the-event-loop">1.5 Write the event loop</h3>
+<p>Replace <code>pass</code> in <code>run_turn()</code> with a loop that:</p>
+<ol>
+<li>opens the event stream: <code>with client.beta.sessions.events.stream(session_id=session_id) as stream:</code></li>
+<li><strong>then</strong> sends the message: <code>send_message(session_id, text)</code></li>
+<li>goes through each <code>event</code> in the stream:
+   - <code>agent.message</code>: print <code>event.content[0].text</code>
+   - <code>agent.tool_use</code> or <code>agent.mcp_tool_use</code>: print <code>f"  ({event.name}…)"</code>, so you can see what the agent is doing
+   - <code>session.status_idle</code>: the agent is done, so <code>break</code></li>
+</ol>
+<details><summary>Stuck? Show the loop.</summary><div class="inner"><div class="code"><div class="codebar"><span>Python</span><button class="copy">Copy</button></div><pre><code>def run_turn(session_id, text):
+    with client.beta.sessions.events.stream(session_id=session_id) as stream:
+        send_message(session_id, text)
+        for event in stream:
+            if event.type == &quot;agent.message&quot;:
+                print(event.content[0].text)
+            elif event.type in (&quot;agent.tool_use&quot;, &quot;agent.mcp_tool_use&quot;):
+                print(f&quot;  ({event.name}…)&quot;)
+            elif event.type == &quot;session.status_idle&quot;:
+                break
+</code></pre></div></div></details>
+<h3 id="16-make-the-chat-app">1.6 Make the chat app</h3>
+<p>Create <code>chat.py</code>:</p>
+<div class="code"><div class="codebar"><span>Python</span><button class="copy">Copy</button></div><pre><code>&quot;&quot;&quot;My Travel App, in the terminal.&quot;&quot;&quot;
+from travel_agent import run_turn, start_session
+
+print(&quot;Travel Agent. Type a message, or press Enter on an empty line to quit.&quot;)
+session_id = start_session()
+while True:
+    text = input(&quot;\nyou › &quot;).strip()
+    if not text:
+        break
+    run_turn(session_id, text)
+</code></pre></div>
+<p>Run it:</p>
+<div class="code"><div class="codebar"><span>Terminal</span><button class="copy">Copy</button></div><pre><code>python chat.py
+</code></pre></div>
+<p>Type <em>Hi! I'm thinking about a trip to Maui.</em></p>
+<div class="check"><p><strong>You know it worked when</strong>:</p><ul>
+<li>the agent replies within about 30 seconds, and</li>
+<li>in the Console, <strong>Managed Agents → Sessions</strong> lists your session. Click it to see the conversation.</li>
+</ul></div>
+<div class="note">
+<p><strong>Try this:</strong> ask <em>How much is a flight from SFO to Maui?</em> Your agent has no flight data yet. Does it guess? Milestone 2 fixes that.</p>
+</div>
+<hr />
+<h2 id="milestone-2-find-real-flights">Milestone 2: Find real flights</h2>
+<p><strong>Goal:</strong> connect your agent to SerpApi's MCP server, so it can search live Google Flights prices, without your key ever entering the container.</p>
+<h3 id="21-put-your-serpapi-key-in-a-vault">2.1 Put your SerpApi key in a vault</h3>
+<p>Create <code>make_vault.py</code>:</p>
+<div class="code"><div class="codebar"><span>Python</span><button class="copy">Copy</button></div><pre><code>&quot;&quot;&quot;Run once: store your SerpApi key in a vault at Anthropic.&quot;&quot;&quot;
+import json
+import os
+
+import anthropic
+
+client = anthropic.Anthropic()
+
+vault = client.beta.vaults.create(display_name=&quot;My Travel App secrets&quot;)
+client.beta.vaults.credentials.create(
+    vault_id=vault.id,
+    display_name=&quot;SerpApi key&quot;,
+    auth={
+        # Anthropic sends this as &quot;Authorization: Bearer &lt;key&gt;&quot; to this MCP server only.
+        &quot;type&quot;: &quot;static_bearer&quot;,
+        &quot;mcp_server_url&quot;: &quot;https://mcp.serpapi.com/mcp&quot;,
+        &quot;token&quot;: os.environ[&quot;SERPAPI_API_KEY&quot;],
+    },
+)
+json.dump({&quot;vault_id&quot;: vault.id}, open(&quot;vault.json&quot;, &quot;w&quot;))
+print(&quot;saved&quot;, vault.id, &quot;to vault.json&quot;)
+</code></pre></div>
+<p>Run it once:</p>
+<div class="code"><div class="codebar"><span>Terminal</span><button class="copy">Copy</button></div><pre><code>python make_vault.py
+</code></pre></div>
+<div class="check"><p><strong>You know it worked when</strong> it prints <code>saved vlt_… to vault.json</code>.</p></div><h3 id="22-connect-the-mcp-server">2.2 Connect the MCP server</h3>
+<p>Update <code>agents/travel-agent.md</code> so it looks like this (new lines are marked <code># new</code>, and there are two new prompt lines at the end):</p>
+<div class="code"><div class="codebar"><span>Markdown</span><button class="copy">Copy</button></div><pre><code>---
+name: Travel Agent
+model: claude-opus-5
+mcp_servers:                                   # new
+  - type: url                                  # new
+    name: serpapi                              # new
+    url: https://mcp.serpapi.com/mcp           # new
+tools:
+  - type: agent_toolset_20260401
+  - type: mcp_toolset                          # new
+    mcp_server_name: serpapi                   # new
+    default_config:                            # new
+      permission_policy: {type: always_allow}  # new
+---
+You are the travel agent inside My Travel App. You help travelers plan and book trips.
+Keep every reply to 1-3 short sentences, in plain text. No Markdown.
+When you recommend something, end with one line that starts with &quot;Why:&quot;.
+Search real flights before quoting any price. Never guess prices.
+Search with mode &quot;complete&quot;, so results include google_flights_url.
+</code></pre></div>
+<p><code>permission_policy: always_allow</code> matters: MCP tools ask for approval by default, and a flight search is harmless.</p>
+<p>Upload the change:</p>
+<div class="code"><div class="codebar"><span>Terminal</span><button class="copy">Copy</button></div><pre><code>ant apply agents/travel-agent.md
+</code></pre></div>
+<div class="check"><p><strong>You know it worked when</strong> the plan shows <code>~ update</code> for your agent, and in <code>claude-lock.json</code> your agent's entry now says <code>"version": "2"</code>.</p></div><h3 id="23-attach-the-vault-to-your-sessions">2.3 Attach the vault to your sessions</h3>
+<p>In <code>travel_agent.py</code>, load the vault ID below the other IDs, and pass it when you create a session:</p>
+<div class="code"><div class="codebar"><span>Python</span><button class="copy">Copy</button></div><pre><code>VAULT_ID = json.load(open(&quot;vault.json&quot;))[&quot;vault_id&quot;]
+</code></pre></div>
+<div class="code"><div class="codebar"><span>Python</span><button class="copy">Copy</button></div><pre><code>def start_session():
+    session = client.beta.sessions.create(agent=AGENT_ID, environment_id=ENV_ID, vault_ids=[VAULT_ID])
+    return session.id
+</code></pre></div>
+<h3 id="24-search">2.4 Search</h3>
+<p>Start the chat:</p>
+<div class="code"><div class="codebar"><span>Terminal</span><button class="copy">Copy</button></div><pre><code>python chat.py
+</code></pre></div>
+<p>Ask something like <em>Flights from SFO to Maui on November 23, one way?</em> (use a date in the next few months).</p>
+<div class="check"><p><strong>You know it worked when</strong> you see <code>(search…)</code> and the reply names real flights and prices. Compare them with <a href="https://www.google.com/travel/flights">Google Flights</a>.</p></div><hr />
+<h2 id="milestone-3-use-my-points">Milestone 3: Use my points</h2>
+<p><strong>Goal:</strong> give your agent a <strong>skill</strong> that does points math in its container, and a <strong>custom tool</strong> that reads the traveler's points from <em>your</em> app.</p>
+<h3 id="31-write-the-skill">3.1 Write the skill</h3>
+<p>A skill is a folder with a <code>SKILL.md</code> and any scripts it needs. Create these three files.</p>
+<p><code>skills/points-advisor/SKILL.md</code>:</p>
+<div class="code"><div class="codebar"><span>Markdown</span><button class="copy">Copy</button></div><pre><code>---
+name: points-advisor
+description: Price a flight in miles and decide whether to pay with points or cash. Use whenever the traveler asks about points or miles.
+---
+To price a flight in miles, run (FLIGHT_HOURS is the flight time, like 5.5):
+
+    python award_price.py FLIGHT_HOURS CABIN [round]
+
+CABIN is economy, premium, business, or first. These are sample prices, not live; always say so.
+
+Then work out what the points are worth:
+
+    python cpp.py CASH_PRICE MILES
+
+Using points is worth it at 1.3 cents per point or more. Put the cents-per-point number in your &quot;Why:&quot; line.
+</code></pre></div>
+<p><code>skills/points-advisor/award_price.py</code>:</p>
+<div class="code"><div class="codebar"><span>Python</span><button class="copy">Copy</button></div><pre><code>&quot;&quot;&quot;Sample award prices from My Travel App's own chart (not real airline prices).
+Usage: python award_price.py FLIGHT_HOURS CABIN [round]&quot;&quot;&quot;
+import sys
+
+hours, cabin = float(sys.argv[1]), sys.argv[2].lower()
+base = 12500 if hours &lt; 3 else 17500 if hours &lt; 6 else 30000 if hours &lt; 10 else 40000
+multiplier = {&quot;economy&quot;: 1, &quot;premium&quot;: 1.6, &quot;business&quot;: 2.2, &quot;first&quot;: 3}[cabin]
+trips = 2 if sys.argv[-1] == &quot;round&quot; else 1
+print(f&quot;{round(base * multiplier * trips, -3):,.0f} miles, {cabin} (sample award price, not live)&quot;)
+</code></pre></div>
+<p><code>skills/points-advisor/cpp.py</code>:</p>
+<div class="code"><div class="codebar"><span>Python</span><button class="copy">Copy</button></div><pre><code>&quot;&quot;&quot;Cents per point for paying with miles. Usage: python cpp.py CASH_PRICE MILES&quot;&quot;&quot;
+import sys
+
+cash, miles = float(sys.argv[1]), float(sys.argv[2])
+cents = cash / miles * 100
+verdict = &quot;great&quot; if cents &gt;= 1.5 else &quot;good&quot; if cents &gt;= 1.3 else &quot;poor&quot;
+print(f&quot;{cents:.2f} cents per point ({verdict})&quot;)
+</code></pre></div>
+<p>Try a script yourself. It should print 35,000 miles:</p>
+<div class="code"><div class="codebar"><span>Terminal</span><button class="copy">Copy</button></div><pre><code>python skills/points-advisor/award_price.py 5.5 economy round
+</code></pre></div>
+<h3 id="32-write-a-custom-tool">3.2 Write a custom tool</h3>
+<p>Create <code>tools.py</code>. Custom tools run in <strong>your</strong> app. This one reads points from a file on your computer, which acts as the app's database:</p>
+<div class="code"><div class="codebar"><span>Python</span><button class="copy">Copy</button></div><pre><code>&quot;&quot;&quot;My Travel App's custom tools. They run on your computer, not at Anthropic.&quot;&quot;&quot;
+import json
+from pathlib import Path
+
+POINTS_FILE = Path(&quot;points.json&quot;)
+
+
+def get_points_balance():
+    if not POINTS_FILE.exists():  # start with some sample points
+        POINTS_FILE.write_text(json.dumps({&quot;United MileagePlus&quot;: 45000, &quot;Chase Ultimate Rewards&quot;: 60000}))
+    points = json.loads(POINTS_FILE.read_text())
+    return &quot;, &quot;.join(f&quot;{program}: {amount:,}&quot; for program, amount in points.items())
+
+
+TOOLS = {&quot;get_points_balance&quot;: get_points_balance}
+</code></pre></div>
+<h3 id="33-tell-the-agent-about-both">3.3 Tell the agent about both</h3>
+<p>In <code>agents/travel-agent.md</code>, add the custom tool at the end of <code>tools</code>, and a <code>skills</code> section after it. The end of the settings now looks like this. Claude only sees the tool's name and description; the code stays in your app.</p>
+<div class="code"><div class="codebar"><span>YAML</span><button class="copy">Copy</button></div><pre><code>  - type: mcp_toolset
+    mcp_server_name: serpapi
+    default_config:
+      permission_policy: {type: always_allow}
+  - type: custom                               # new
+    name: get_points_balance                   # new
+    description: The traveler's airline and hotel points balances.  # new
+    input_schema: {type: object}               # new
+skills:                                        # new
+  - ../skills/points-advisor                   # new
+---
+</code></pre></div>
+<p>Upload both (this also uploads the skill):</p>
+<div class="code"><div class="codebar"><span>Terminal</span><button class="copy">Copy</button></div><pre><code>ant apply agents/travel-agent.md skills/points-advisor
+</code></pre></div>
+<div class="check"><p><strong>You know it worked when</strong> the plan shows <code>+ create</code> for the skill and <code>~ update</code> for the agent.</p></div><h3 id="34-work-it-out-why-does-it-break">3.4 Work it out: why does it break?</h3>
+<p>Start the chat:</p>
+<div class="code"><div class="codebar"><span>Terminal</span><button class="copy">Copy</button></div><pre><code>python chat.py
+</code></pre></div>
+<p>Ask <em>How many points do I have?</em></p>
+<p>Something goes wrong. Figure out what, and fix it. Clues:</p>
+<ul>
+<li>What did the agent reply? Send a second message. What error do you get?</li>
+<li>Open the session in the Console. What's the last thing the agent did?</li>
+<li>Look at your loop in <code>run_turn()</code>. When does it <code>break</code>?</li>
+</ul>
+<details><summary>Hint 1</summary><div class="inner"><p>When the agent calls a <strong>custom tool</strong>, it pauses and waits for <em>your app</em> to run the tool and send back the result. While it waits, the session goes <code>session.status_idle</code>, but with <code>event.stop_reason.type == "requires_action"</code>.</p></div></details>
+<details><summary>Hint 2</summary><div class="inner"><p>Add <code>from tools import TOOLS</code> at the top of <code>travel_agent.py</code>, and this function, which runs each tool the agent asked for and sends back the results:</p>
+<div class="code"><div class="codebar"><span>Python</span><button class="copy">Copy</button></div><pre><code>def send_tool_results(session_id, calls):
+    results = []
+    for call in calls:
+        output = TOOLS[call.name](**call.input)
+        results.append({
+            &quot;type&quot;: &quot;user.custom_tool_result&quot;,
+            &quot;custom_tool_use_id&quot;: call.id,
+            &quot;content&quot;: [{&quot;type&quot;: &quot;text&quot;, &quot;text&quot;: output}],
+        })
+    client.beta.sessions.events.send(session_id=session_id, events=results)
+</code></pre></div>
+<p>Then make your loop collect <code>agent.custom_tool_use</code> events. When the session goes idle with <code>requires_action</code>, call <code>send_tool_results(...)</code> and keep listening instead of stopping.</p></div></details>
+<details><summary>Show the fixed loop</summary><div class="inner"><div class="code"><div class="codebar"><span>Python</span><button class="copy">Copy</button></div><pre><code>def run_turn(session_id, text):
+    with client.beta.sessions.events.stream(session_id=session_id) as stream:
+        send_message(session_id, text)
+        pending = []
+        for event in stream:
+            if event.type == &quot;agent.message&quot;:
+                print(event.content[0].text)
+            elif event.type in (&quot;agent.tool_use&quot;, &quot;agent.mcp_tool_use&quot;):
+                print(f&quot;  ({event.name}…)&quot;)
+            elif event.type == &quot;agent.custom_tool_use&quot;:
+                print(f&quot;  (your app runs {event.name}…)&quot;)
+                pending.append(event)
+            elif event.type == &quot;session.status_idle&quot;:
+                if event.stop_reason.type == &quot;requires_action&quot;:
+                    send_tool_results(session_id, pending)
+                    pending = []
+                    continue
+                break
+</code></pre></div></div></details>
+<div class="check"><p><strong>You know it worked when</strong>:</p><ul>
+<li><code>How many points do I have?</code> shows <code>(your app runs get_points_balance…)</code> and lists your balances, and</li>
+<li><code>Should I use points for a flight from SFO to Maui on November 23?</code> shows <code>(bash…)</code> (the skill running in the container) and ends with a <code>Why:</code> line that has the cents per point.</li>
+</ul></div>
+<hr />
+<h2 id="milestone-4-ask-before-booking">Milestone 4: Ask before booking</h2>
+<p><strong>Goal:</strong> let the agent offer to book, but make a person decide, in your app.</p>
+<h3 id="41-write-the-booking-tool">4.1 Write the booking tool</h3>
+<p>Add this function to <code>tools.py</code>, put <code>import webbrowser</code> at the top, and update <code>TOOLS</code>:</p>
+<div class="code"><div class="codebar"><span>Python</span><button class="copy">Copy</button></div><pre><code>def book_flight(flight, price, link):
+    &quot;&quot;&quot;Show the traveler where to book, then wait for them to decide.&quot;&quot;&quot;
+    print(f&quot;\n  Book {flight} for {price}?&quot;)
+    if input(&quot;  Open it on Google Flights to book? [y/n] &quot;).strip().lower() != &quot;y&quot;:
+        return &quot;The traveler said no. Nothing was booked.&quot;
+    webbrowser.open(link)
+    if input(&quot;  Did you finish booking? [y/n] &quot;).strip().lower() != &quot;y&quot;:
+        return &quot;The traveler looked at it but didn't book.&quot;
+    return f&quot;The traveler booked {flight} for {price}.&quot;
+
+
+TOOLS = {&quot;get_points_balance&quot;: get_points_balance, &quot;book_flight&quot;: book_flight}
+</code></pre></div>
+<h3 id="42-tell-the-agent-about-it">4.2 Tell the agent about it</h3>
+<p>In <code>agents/travel-agent.md</code>, add it at the end of <code>tools</code> (above <code>skills:</code>):</p>
+<div class="code"><div class="codebar"><span>YAML</span><button class="copy">Copy</button></div><pre><code>  - type: custom
+    name: book_flight
+    description: &quot;Offer to book a flight. The app shows the traveler the flight on Google Flights and asks them to confirm.&quot;
+    input_schema:
+      type: object
+      properties:
+        flight: {type: string, description: &quot;e.g. 'UA 1957, SFO to OGG, Nov 23'&quot;}
+        price: {type: string, description: &quot;e.g. '$571'&quot;}
+        link: {type: string, description: &quot;google_flights_url from the search&quot;}
+      required: [flight, price, link]
+</code></pre></div>
+<p>Add one line to the prompt:</p>
+<div class="code"><div class="codebar"><span></span><button class="copy">Copy</button></div><pre><code>When the traveler wants to book, use book_flight. Never ask for card numbers in chat.
+</code></pre></div>
+<p>Upload the change:</p>
+<div class="code"><div class="codebar"><span>Terminal</span><button class="copy">Copy</button></div><pre><code>ant apply agents/travel-agent.md
+</code></pre></div>
+<h3 id="43-book-a-flight">4.3 Book a flight</h3>
+<p>Start the chat:</p>
+<div class="code"><div class="codebar"><span>Terminal</span><button class="copy">Copy</button></div><pre><code>python chat.py
+</code></pre></div>
+<p>Ask for flights, tell the agent which one you want, and say <em>Book it.</em></p>
+<div class="check"><p><strong>You know it worked when</strong>:</p><ul>
+<li>your terminal asks <code>Open it on Google Flights to book? [y/n]</code>, and <code>y</code> opens the flight in your browser (don't actually buy it), and</li>
+<li>answering <code>n</code> to <code>Did you finish booking?</code> makes the agent say nothing was booked.</li>
+</ul></div>
+<p><strong>Why it works this way:</strong> <code>book_flight</code> is a custom tool, so it runs in your app, and your app can stop and wait for a person. The agent never sees payment details.</p>
+<p>🎉 <strong>You've built it:</strong> an agent file, a container, sessions, an event loop, an MCP tool with a vault, a skill, and two custom tools.</p>
+<hr />
+<h2 id="extensions-optional">Extensions (optional)</h2>
+<p>Each one is independent.</p>
+<div class="tablewrap"><table>
+<thead>
+<tr>
+<th>Extension</th>
+<th>What you'll learn</th>
+<th>What to do</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Hotels</strong></td>
+<td>More from the same MCP server</td>
+<td>Add a prompt line: "For hotels, search with the google_hotels engine (check-in, check-out, adults)."</td>
+</tr>
+<tr>
+<td><strong>Round trips</strong></td>
+<td>Multi-step tool use</td>
+<td>Add a prompt line: "For round trips, show outbound flights first; after the traveler picks one, search again with its departure_token to get return flights."</td>
+</tr>
+<tr>
+<td><strong>Remember trips</strong></td>
+<td>Memory stores</td>
+<td>Create <code>memory_stores/trips.yaml</code> with a <code>name</code> and a <code>description</code>, run <code>ant apply</code> on it, then pass <code>resources=[{"type": "memory_store", "memory_store_id": ...}]</code> in <code>start_session()</code> (the ID is in <code>claude-lock.json</code>). Ask the agent to save booked trips.</td>
+</tr>
+<tr>
+<td><strong>Price alerts</strong></td>
+<td>Scheduled deployments</td>
+<td>Write <code>agents/price-watcher.md</code> (with the MCP server, and no booking tool) and <code>deployments/price-check.md</code>, then run it once with <code>client.beta.deployments.run(...)</code>. Needs "Remember trips".</td>
+</tr>
+<tr>
+<td><strong>A web app</strong></td>
+<td>Same agent, a different screen</td>
+<td>Ask your instructor for the ready-made web UI (<code>web.py</code> + <code>static/</code>), which reuses your event loop.</td>
+</tr>
+<tr>
+<td><strong>Real miles prices</strong></td>
+<td>A paid third-party API</td>
+<td>Replace the sample chart with the seats.aero API (needs seats.aero Pro, about $10/month).</td>
+</tr>
+</tbody>
+</table></div>
+<hr />
+<h2 id="if-something-goes-wrong">If something goes wrong</h2>
+<div class="tablewrap"><table>
+<thead>
+<tr>
+<th>You see</th>
+<th>It means</th>
+<th>Fix</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>ant: command not found</code></td>
+<td><code>ant</code> isn't installed, or your terminal can't find it</td>
+<td>Redo <a href="#b-install-ant-anthropics-command-line-tool">step B</a>, then open a new terminal</td>
+</tr>
+<tr>
+<td><code>KeyError: 'SERPAPI_API_KEY'</code> or an authentication error</td>
+<td>Your keys aren't loaded in this terminal</td>
+<td>Run <code>source .venv/bin/activate &amp;&amp; set -a &amp;&amp; source .env &amp;&amp; set +a</code></td>
+</tr>
+<tr>
+<td><code>FileNotFoundError: … claude-lock.json</code> or <code>vault.json</code></td>
+<td>You're in the wrong folder, or skipped a step</td>
+<td><code>cd</code> into <code>travel-agent</code>, then redo 1.3 or 2.1</td>
+</tr>
+<tr>
+<td><code>mapping value is not allowed in this context</code></td>
+<td>A YAML line has <code>:</code> inside text</td>
+<td>Put that text in quotes</td>
+</tr>
+<tr>
+<td><code>409</code> when uploading the environment</td>
+<td>That environment name is taken</td>
+<td>Use a unique name, e.g. <code>travel-env-yourname</code></td>
+</tr>
+<tr>
+<td><code>400 … waiting on responses to events</code></td>
+<td>The agent is waiting for a custom tool's result</td>
+<td>See <a href="#34-work-it-out-why-does-it-break">3.4</a></td>
+</tr>
+<tr>
+<td>Nothing happens for over a minute</td>
+<td>A stalled request</td>
+<td>Ctrl-C and run it again</td>
+</tr>
+<tr>
+<td>Your change to the agent doesn't show up</td>
+<td>A running chat keeps the agent version it started with</td>
+<td>Quit <code>chat.py</code> and start it again</td>
+</tr>
+</tbody>
+</table></div>
+<p><strong>See what your agent did:</strong> every chat creates a session. Open it in the Console (<strong>Managed Agents → Sessions</strong>) to see each message, tool call, and result, in order.</p>
+</main>
+<script>
+  // Copy buttons
+  document.querySelectorAll(".copy").forEach(button => button.addEventListener("click", async () => {
+    const text = button.closest(".code").querySelector("code").innerText.replace(/\n$/, "");
+    try { await navigator.clipboard.writeText(text); }
+    catch { const t = document.createElement("textarea"); t.value = text; document.body.appendChild(t); t.select(); document.execCommand("copy"); t.remove(); }
+    button.textContent = "Copied!"; setTimeout(() => button.textContent = "Copy", 1500);
+  }));
+  // Computer tabs: picking one switches every set of tabs, and the page remembers it
+  function pick(os) {
+    document.querySelectorAll(".tab").forEach(t => t.classList.toggle("on", t.dataset.os === os));
+    document.querySelectorAll(".pane").forEach(p => p.classList.toggle("on", p.dataset.os === os));
+    try { localStorage.setItem("lab-os", os); } catch {}
+  }
+  document.querySelectorAll(".tab").forEach(t => t.addEventListener("click", () => pick(t.dataset.os)));
+  let saved = null; try { saved = localStorage.getItem("lab-os"); } catch {}
+  pick(saved || (navigator.platform.toLowerCase().includes("mac") ? "Mac" : "Linux or Windows"));
+</script>
+</body></html>
