@@ -2,7 +2,7 @@
 
 **Time:** about 60 minutes
 
-**You'll build:** a travel agent that searches real flights and works out whether to use your points, running on Claude Managed Agents. You'll create every file yourself; this page shows you exactly what goes in each one.
+**You'll build:** a travel agent that searches real flights and works out whether to use your points. You will create every file and learn how to build with Claude Managed Agents. We provide code and guidance throughout the process, but remember that your goal is to **learn**, not just complete the task. Happy learning!
 
 | Part | What you'll do |
 |---|---|
@@ -12,7 +12,7 @@
 | [Milestone 3](#milestone-3-use-my-points) | Use your points (skill + custom tool) |
 | [Extensions](#extensions-optional) | Booking, hotels, memory, price alerts, a web app |
 
-Each step ends with **✅ You know it worked when…** so you can check your progress as you go.
+Each step ends with "You know it worked when…" so you can check your progress as you go.
 
 ---
 
