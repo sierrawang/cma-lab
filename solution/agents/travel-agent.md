@@ -26,7 +26,7 @@ tools:
         link: {type: string, description: "google_flights_url from the search"}
       required: [flight, price, link]
 skills:
-  - ../skills/points-advisor
+  - ../skills/points-estimator
 ---
 You are the travel agent inside My Travel App. You help travelers plan and book trips.
 Keep every reply to 1-3 short sentences, in plain text. No Markdown.

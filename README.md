@@ -461,9 +461,9 @@ travel-agent/
 ├── environments/
 │   └── travel-env.yaml
 ├── skills/
-│   └── points-advisor/          ← new
+│   └── points-estimator/        ← new
 │       ├── SKILL.md
-│       ├── award_price.py
+│       ├── compute_points.py
 │       └── cpp.py
 ├── claude-lock.json
 ├── make_vault.py
@@ -480,16 +480,16 @@ A skill is a folder with a `SKILL.md` and any scripts it needs. Create these thr
 
 > **About the miles numbers:** this skill *estimates* what a flight costs in miles, from how long the flight is and which cabin you pick. Real award prices vary by airline and date, and there's no free API for them, so we leave getting the true miles price from an API as an [extension](#extensions-optional).
 
-`skills/points-advisor/SKILL.md`:
+`skills/points-estimator/SKILL.md`:
 
 ```markdown
 ---
-name: points-advisor
+name: points-estimator
 description: Price a flight in miles and decide whether to pay with points or cash. Use whenever the traveler asks about points or miles.
 ---
 To price a flight in miles, run (FLIGHT_HOURS is the flight time, like 5.5):
 
-    python award_price.py FLIGHT_HOURS CABIN [round]
+    python compute_points.py FLIGHT_HOURS CABIN [round]
 
 CABIN is economy, premium, business, or first. These are sample prices, not live; always say so.
 
@@ -500,11 +500,11 @@ Then work out what the points are worth:
 Using points is worth it at 1.3 cents per point or more. Mention the cents per point when you recommend points or cash.
 ```
 
-`skills/points-advisor/award_price.py`:
+`skills/points-estimator/compute_points.py`:
 
 ```python
 """Sample award prices from My Travel App's own chart (not real airline prices).
-Usage: python award_price.py FLIGHT_HOURS CABIN [round]"""
+Usage: python compute_points.py FLIGHT_HOURS CABIN [round]"""
 import sys
 
 hours, cabin = float(sys.argv[1]), sys.argv[2].lower()
@@ -514,7 +514,7 @@ trips = 2 if sys.argv[-1] == "round" else 1
 print(f"{round(base * multiplier * trips, -3):,.0f} miles, {cabin} (sample award price, not live)")
 ```
 
-`skills/points-advisor/cpp.py`:
+`skills/points-estimator/cpp.py`:
 
 ```python
 """Cents per point for paying with miles. Usage: python cpp.py CASH_PRICE MILES"""
@@ -529,7 +529,7 @@ print(f"{cents:.2f} cents per point ({verdict})")
 Try a script yourself. It should print 35,000 miles:
 
 ```bash
-python skills/points-advisor/award_price.py 5.5 economy round
+python skills/points-estimator/compute_points.py 5.5 economy round
 ```
 
 
@@ -571,14 +571,14 @@ In `agents/travel-agent.md`, add the custom tool at the end of `tools`, and a `s
     description: The traveler's airline and hotel points balances.  # new
     input_schema: {type: object}               # new
 skills:                                        # new
-  - ../skills/points-advisor                   # new
+  - ../skills/points-estimator                 # new
 ---
 ```
 
 Upload the agent and the skill together:
 
 ```bash
-ant apply agents/travel-agent.md skills/points-advisor
+ant apply agents/travel-agent.md skills/points-estimator
 ```
 
 ✅ **You know it worked when** the plan shows `+ create` for the skill and `~ update` for the agent.
@@ -847,7 +847,7 @@ Airlines and banks don't offer free public APIs for points balances. Two ideas: 
 
 ### Extension: Real miles prices
 
-The skill's miles prices are estimates. For real award prices, subscribe to [seats.aero](https://seats.aero) Pro, then write a custom tool in `tools.py` that calls the [seats.aero API](https://developers.seats.aero/reference/getting-started-p) (it expects your key in a `Partner-Authorization` header). Update `SKILL.md` to use the real price instead of `award_price.py`.
+The skill's miles prices are estimates. For real award prices, subscribe to [seats.aero](https://seats.aero) Pro, then write a custom tool in `tools.py` that calls the [seats.aero API](https://developers.seats.aero/reference/getting-started-p) (it expects your key in a `Partner-Authorization` header). Update `SKILL.md` to use the real price instead of `compute_points.py`.
 
 ---
 

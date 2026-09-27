@@ -1,5 +1,5 @@
 """Sample award prices from My Travel App's own chart (not real airline prices).
-Usage: python award_price.py FLIGHT_HOURS CABIN [round]"""
+Usage: python compute_points.py FLIGHT_HOURS CABIN [round]"""
 import sys
 
 hours, cabin = float(sys.argv[1]), sys.argv[2].lower()

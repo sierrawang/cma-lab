@@ -1,10 +1,10 @@
 ---
-name: points-advisor
+name: points-estimator
 description: Price a flight in miles and decide whether to pay with points or cash. Use whenever the traveler asks about points or miles.
 ---
 To price a flight in miles, run (FLIGHT_HOURS is the flight time, like 5.5):
 
-    python award_price.py FLIGHT_HOURS CABIN [round]
+    python compute_points.py FLIGHT_HOURS CABIN [round]
 
 CABIN is economy, premium, business, or first. These are sample prices, not live; always say so.
 
