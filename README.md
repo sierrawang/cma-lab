@@ -318,7 +318,7 @@ Type *Hi! I'm thinking about a trip to Maui.*
 
 ✅ **You know it worked when**:
 - the agent replies within about 30 seconds, and
-- in the Console, **Managed Agents → Sessions** lists your session. Click it to see the conversation.
+- the [Sessions page in the Console](https://platform.claude.com/workspaces/default/sessions) (**Managed Agents → Sessions**) lists your session. Click it to see the conversation.
 
 > **Try this:** ask *How much is a flight from SFO to Maui?* Your agent has no flight data yet. Does it guess? Milestone 2 fixes that.
 
@@ -712,4 +712,4 @@ Start the chat, ask for flights, pick one, and say *Book it.*
 | Nothing happens for over a minute | A stalled request | Ctrl-C and run it again |
 | Your change to the agent doesn't show up | A running chat keeps the agent version it started with | Quit `chat.py` and start it again |
 
-**See what your agent did:** every chat creates a session. Open it in the Console (**Managed Agents → Sessions**) to see each message, tool call, and result, in order.
+**See what your agent did:** every chat creates a session. Open it on the [Sessions page in the Console](https://platform.claude.com/workspaces/default/sessions) to see each message, tool call, and result, in order.
