@@ -463,6 +463,9 @@ TOOLS = {&quot;get_points_balance&quot;: get_points_balance}
 </code></pre></div></div></details>
 <div class="check"><p><strong>You know it worked when</strong> <em>How many points do I have?</em> shows <code>(your app runs get_points_balance…)</code> and the reply lists your balances.</p></div><h3 id="34-write-a-skill">3.4 Write a skill</h3>
 <p>A skill is a folder with a <code>SKILL.md</code> and any scripts it needs. Create these three files.</p>
+<div class="note">
+<p><strong>About the miles numbers:</strong> this skill <em>estimates</em> what a flight costs in miles, from how long the flight is and which cabin you pick. Real award prices vary by airline and date, and there's no free API for them, so we leave getting the true miles price from an API as an <a href="#extensions-optional">extension</a>.</p>
+</div>
 <p><code>skills/points-advisor/SKILL.md</code>:</p>
 <div class="code"><span class="lang">Markdown</span><button class="copy" aria-label="Copy">Copy</button><pre><code>---
 name: points-advisor
@@ -562,7 +565,7 @@ skills:                                        # new
 <tr>
 <td><strong>Real miles prices</strong></td>
 <td>A paid third-party API</td>
-<td>Replace the sample chart with the seats.aero API (needs seats.aero Pro, about $10/month).</td>
+<td>Replace the skill's estimate with real award prices from the seats.aero API, as a new MCP or custom tool (needs seats.aero Pro, about $10/month).</td>
 </tr>
 </tbody>
 </table></div>

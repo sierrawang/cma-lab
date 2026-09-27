@@ -594,6 +594,8 @@ def run_turn(session_id, text):
 
 A skill is a folder with a `SKILL.md` and any scripts it needs. Create these three files.
 
+> **About the miles numbers:** this skill *estimates* what a flight costs in miles, from how long the flight is and which cabin you pick. Real award prices vary by airline and date, and there's no free API for them, so we leave getting the true miles price from an API as an [extension](#extensions-optional).
+
 `skills/points-advisor/SKILL.md`:
 
 ```markdown
@@ -685,7 +687,7 @@ Each one is independent.
 | **Remember trips** | Memory stores | Create `memory_stores/trips.yaml` with a `name` and a `description`, run `ant apply` on it, then pass `resources=[{"type": "memory_store", "memory_store_id": ...}]` in `start_session()` (the ID is in `claude-lock.json`). Ask the agent to save booked trips. |
 | **Price alerts** | Scheduled deployments | Write `agents/price-watcher.md` (with the MCP server, and no booking tool) and `deployments/price-check.md`, then run it once with `client.beta.deployments.run(...)`. Needs "Remember trips". |
 | **A web app** | Same agent, a different screen | Ask your instructor for the ready-made web UI (`web.py` + `static/`), which reuses your event loop. |
-| **Real miles prices** | A paid third-party API | Replace the sample chart with the seats.aero API (needs seats.aero Pro, about $10/month). |
+| **Real miles prices** | A paid third-party API | Replace the skill's estimate with real award prices from the seats.aero API, as a new MCP or custom tool (needs seats.aero Pro, about $10/month). |
 
 ### Extension: Ask before booking
 
