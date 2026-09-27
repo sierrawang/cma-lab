@@ -662,7 +662,7 @@ def run_turn(session_id, text):
 
 ## Check your understanding
 
-Five questions, about 5 minutes. Answer each one in a sentence or two, in your own words, before you open the example answer.
+Answer the following five questions in a sentence or two, in your own words, before you open the example answer.
 
 **1.** When you asked *Should I use points for a flight from SFO to Maui on November 23?*, your agent took these steps:
 
