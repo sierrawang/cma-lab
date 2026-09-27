@@ -118,7 +118,7 @@ pip install anthropic
 
 ### D. Your Anthropic API key
 
-1. Go to [console.anthropic.com](https://console.anthropic.com) and sign in (or create an account).
+1. Go to [platform.claude.com](https://platform.claude.com) and sign in (or create an account). Your account needs API credits, which you can add under **Billing**.
 2. Open **Settings → API keys** and click **Create key**.
 3. Name it `travel-agent-lab`.
 4. Copy the key (it starts with `sk-ant-`). In your `travel-agent` folder, create a file named `.env` and paste it in like this:
@@ -139,7 +139,7 @@ SerpApi gives your agent live Google Flights results. It's free and takes about 
 SERPAPI_API_KEY=...
 ```
 
-### F. Load Your Keys
+### F. Load your keys
 
 In the `travel-agent` folder, you should now have a file named `.env` with your two keys:
 ```
@@ -470,7 +470,7 @@ travel-agent/
 ├── make_vault.py
 ├── vault.json
 ├── tools.py                     ← new
-├── points.json                  ← made by tools.py
+├── points.json                  ← made the first time the agent checks your points
 ├── travel_agent.py              ← updated
 └── chat.py
 ```
@@ -512,7 +512,7 @@ hours, cabin = float(sys.argv[1]), sys.argv[2].lower()
 base = 12500 if hours < 3 else 17500 if hours < 6 else 30000 if hours < 10 else 40000
 multiplier = {"economy": 1, "premium": 1.6, "business": 2.2, "first": 3}[cabin]
 trips = 2 if sys.argv[-1] == "round" else 1
-print(f"{round(base * multiplier * trips, -3):,.0f} miles, {cabin} (sample award price, not live)")
+print(f"{base * multiplier * trips:,.0f} miles, {cabin} (sample award price, not live)")
 ```
 
 `skills/points-estimator/cpp.py`:
@@ -560,7 +560,7 @@ TOOLS = {"get_points_balance": get_points_balance}
 
 ### 3.3 Tell the agent about both
 
-In `agents/travel-agent.md`, add the custom tool at the end of `tools`, and a `skills` section after it. The end of the settings now looks like this. Claude only sees the tool's name and description; the code stays in your app.
+In `agents/travel-agent.md`, add the custom tool at the end of `tools`, and a `skills` section after it. The end of the settings now looks like this. Claude only sees the tool's name, description, and inputs; the code stays in your app.
 
 ```yaml
   - type: mcp_toolset
@@ -630,6 +630,8 @@ Then make your loop collect `agent.custom_tool_use` events. When the session goe
 <details>
 <summary>Show the fixed loop</summary>
 
+This uses `send_tool_results()` and the `TOOLS` import from Hint 2.
+
 ```python
 def run_turn(session_id, text):
     with client.beta.sessions.events.stream(session_id=session_id) as stream:
@@ -664,7 +666,7 @@ def run_turn(session_id, text):
 
 Answer the following five questions in a sentence or two, in your own words, before you open the example answer.
 
-**1.** When you asked *Should I use points for a flight from SFO to Maui on November 23?*, your agent took these steps:
+**1.** To answer *Should I use points for a flight from SFO to Maui on November 23?*, your agent had to:
 
 - searched for flights
 - looked up your points balance with `get_points_balance`
@@ -911,6 +913,7 @@ The skill's miles prices are estimates. For real award prices, subscribe to [sea
 | You see | It means | Fix |
 |---|---|---|
 | `ant: command not found` | `ant` isn't installed, or your terminal can't find it | Redo [step B](#b-install-ant-anthropics-command-line-tool), then open a new terminal |
+| `credit balance is too low` | Your Anthropic account has no API credits | Add credits under **Billing** in the Console |
 | `KeyError: 'SERPAPI_API_KEY'` or an authentication error | Your keys aren't loaded in this terminal | Run `source .venv/bin/activate && set -a && source .env && set +a` |
 | `FileNotFoundError: … claude-lock.json` or `vault.json` | You're in the wrong folder, or skipped a step | `cd` into `travel-agent`, then redo 1.3 or 2.1 |
 | `mapping value is not allowed in this context` | A YAML line has `: ` inside text | Put that text in quotes |
