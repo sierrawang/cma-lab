@@ -662,17 +662,22 @@ def run_turn(session_id, text):
 
 ## Check your understanding
 
-Five questions, about 5 minutes. Answer each one in a sentence or two, in your own words, before you open the example answer. Your session in the Console is fair game.
+Five questions, about 5 minutes. Answer each one in a sentence or two, in your own words, before you open the example answer.
 
-**1.** You asked *Should I use points for a flight from SFO to Maui on November 23?* Open that session in the Console. For each step the agent took, where did it run: your computer, the container at Anthropic, or SerpApi's server?
+**1.** When you asked *Should I use points for a flight from SFO to Maui on November 23?*, your agent took these steps:
+
+- searched for flights
+- looked up your points balance with `get_points_balance`
+- read `SKILL.md`, then ran `compute_points.py` and `cpp.py`
+
+Where did each one run: your computer, the container at Anthropic, or SerpApi's server?
 
 <details>
 <summary>Example answer</summary>
 
-- The flight search ran on **SerpApi's server**. Anthropic called it for the agent and added your key.
-- `get_points_balance` ran on **your computer**, in `tools.py`.
-- Reading `SKILL.md`, and running `compute_points.py` and `cpp.py`, happened in **the container** (the `(bash…)` lines).
-- Claude's thinking ran at Anthropic. Your app only ran the loop and `get_points_balance`.
+- **Searched for flights:** on **SerpApi's server**. Anthropic called it for the agent and added your key from the vault.
+- **Looked up your points balance:** on **your computer**. Your app ran `get_points_balance` in `tools.py`.
+- **Read `SKILL.md` and ran the scripts:** in **the container** at Anthropic. These are the `(read…)` and `(bash…)` lines.
 </details>
 
 **2.** `compute_points.py` and `get_points_balance` are both code the agent uses. Why is one part of a skill and the other a custom tool?

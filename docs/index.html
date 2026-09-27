@@ -518,13 +518,18 @@ skills:                                        # new
 <p>🎉 <strong>You've built it:</strong> an agent file, a container, sessions, an event loop, an MCP tool with a vault, a skill, and a custom tool.</p>
 
 <div class="finish"><button class="mark" data-id="milestone-3-use-my-points">Mark “Milestone 3: Use my points” as done</button></div></section><section id="sec-check-your-understanding"><h2 id="check-your-understanding">Check your understanding</h2>
-<p>Five questions, about 5 minutes. Answer each one in a sentence or two, in your own words, before you open the example answer. Your session in the Console is fair game.</p>
-<p><strong>1.</strong> You asked <em>Should I use points for a flight from SFO to Maui on November 23?</em> Open that session in the Console. For each step the agent took, where did it run: your computer, the container at Anthropic, or SerpApi's server?</p>
+<p>Five questions, about 5 minutes. Answer each one in a sentence or two, in your own words, before you open the example answer.</p>
+<p><strong>1.</strong> When you asked <em>Should I use points for a flight from SFO to Maui on November 23?</em>, your agent took these steps:</p>
+<ul>
+<li>searched for flights</li>
+<li>looked up your points balance with <code>get_points_balance</code></li>
+<li>read <code>SKILL.md</code>, then ran <code>compute_points.py</code> and <code>cpp.py</code></li>
+</ul>
+<p>Where did each one run: your computer, the container at Anthropic, or SerpApi's server?</p>
 <details><summary>Example answer</summary><div class="inner"><ul>
-<li>The flight search ran on <strong>SerpApi's server</strong>. Anthropic called it for the agent and added your key.</li>
-<li><code>get_points_balance</code> ran on <strong>your computer</strong>, in <code>tools.py</code>.</li>
-<li>Reading <code>SKILL.md</code>, and running <code>compute_points.py</code> and <code>cpp.py</code>, happened in <strong>the container</strong> (the <code>(bash…)</code> lines).</li>
-<li>Claude's thinking ran at Anthropic. Your app only ran the loop and <code>get_points_balance</code>.</li>
+<li><strong>Searched for flights:</strong> on <strong>SerpApi's server</strong>. Anthropic called it for the agent and added your key from the vault.</li>
+<li><strong>Looked up your points balance:</strong> on <strong>your computer</strong>. Your app ran <code>get_points_balance</code> in <code>tools.py</code>.</li>
+<li><strong>Read <code>SKILL.md</code> and ran the scripts:</strong> in <strong>the container</strong> at Anthropic. These are the <code>(read…)</code> and <code>(bash…)</code> lines.</li>
 </ul></div></details>
 <p><strong>2.</strong> <code>compute_points.py</code> and <code>get_points_balance</code> are both code the agent uses. Why is one part of a skill and the other a custom tool?</p>
 <details><summary>Example answer</summary><div class="inner"><p><code>compute_points.py</code> is plain math that needs nothing from your app, so it can run in the container. <code>get_points_balance</code> needs data only your app has (<code>points.json</code> on your computer), and the container can't see your computer. Rule of thumb: if the code needs your app's data, or needs a person, make it a custom tool.</p></div></details>
