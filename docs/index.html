@@ -168,10 +168,13 @@ SERPAPI_API_KEY=...
 <p>At the end of this milestone, your folder looks like this:</p>
 <div class="code"><button class="copy" aria-label="Copy">Copy</button><pre><code>travel-agent/
 ├── .env
-├── agents/travel-agent.md
-├── environments/travel-env.yaml
-├── travel_agent.py
-└── chat.py
+├── agents/
+│   └── travel-agent.md          ← new
+├── environments/
+│   └── travel-env.yaml          ← new
+├── claude-lock.json             ← made by ant apply
+├── travel_agent.py              ← new
+└── chat.py                      ← new
 </code></pre></div>
 <h3 id="11-describe-the-agent">1.1 Describe the agent</h3>
 <p>Create <code>agents/travel-agent.md</code>. The part between the <code>---</code> lines is the agent's settings. Everything below it is the <strong>system prompt</strong>: your instructions to Claude.</p>
@@ -279,6 +282,19 @@ while True:
 
 <div class="finish"><button class="mark" data-id="milestone-1-chat-with-your-agent">Mark “Milestone 1: Chat with your agent” as done</button></div></section><section id="sec-milestone-2-find-real-flights"><h2 id="milestone-2-find-real-flights">Milestone 2: Find real flights</h2>
 <p><strong>Goal:</strong> connect your agent to SerpApi's MCP server, so it can search live Google Flights prices, without your key ever entering the container.</p>
+<p>At the end of this milestone, your folder looks like this:</p>
+<div class="code"><button class="copy" aria-label="Copy">Copy</button><pre><code>travel-agent/
+├── .env
+├── agents/
+│   └── travel-agent.md          ← updated
+├── environments/
+│   └── travel-env.yaml
+├── claude-lock.json
+├── make_vault.py                ← new
+├── vault.json                   ← made by make_vault.py
+├── travel_agent.py              ← updated
+└── chat.py
+</code></pre></div>
 <h3 id="21-put-your-serpapi-key-in-a-vault">2.1 Put your SerpApi key in a vault</h3>
 <p>Create <code>make_vault.py</code>:</p>
 <div class="code"><span class="lang">Python</span><button class="copy" aria-label="Copy">Copy</button><pre><code>&quot;&quot;&quot;Run once: store your SerpApi key in a vault at Anthropic.&quot;&quot;&quot;
@@ -348,6 +364,26 @@ Search with mode &quot;complete&quot;, so results include google_flights_url.
 <div class="check"><p><strong>You know it worked when</strong> you see <code>(search…)</code> and the reply names real flights and prices. Compare them with <a href="https://www.google.com/travel/flights">Google Flights</a>.</p></div>
 <div class="finish"><button class="mark" data-id="milestone-2-find-real-flights">Mark “Milestone 2: Find real flights” as done</button></div></section><section id="sec-milestone-3-use-my-points"><h2 id="milestone-3-use-my-points">Milestone 3: Use my points</h2>
 <p><strong>Goal:</strong> give your agent a <strong>custom tool</strong> that reads the traveler's points from <em>your</em> app, then a <strong>skill</strong> that does the points math in its container.</p>
+<p>At the end of this milestone, your folder looks like this:</p>
+<div class="code"><button class="copy" aria-label="Copy">Copy</button><pre><code>travel-agent/
+├── .env
+├── agents/
+│   └── travel-agent.md          ← updated
+├── environments/
+│   └── travel-env.yaml
+├── skills/
+│   └── points-advisor/          ← new
+│       ├── SKILL.md
+│       ├── award_price.py
+│       └── cpp.py
+├── claude-lock.json
+├── make_vault.py
+├── vault.json
+├── tools.py                     ← new
+├── points.json                  ← made by tools.py
+├── travel_agent.py              ← updated
+└── chat.py
+</code></pre></div>
 <h3 id="31-write-a-custom-tool">3.1 Write a custom tool</h3>
 <p>Create <code>tools.py</code>. Custom tools run in <strong>your</strong> app. This one reads points from a file on your computer, which acts as the app's database:</p>
 <div class="code"><span class="lang">Python</span><button class="copy" aria-label="Copy">Copy</button><pre><code>&quot;&quot;&quot;My Travel App's custom tools. They run on your computer, not at Anthropic.&quot;&quot;&quot;

@@ -177,10 +177,13 @@ At the end of this milestone, your folder looks like this:
 ```
 travel-agent/
 ├── .env
-├── agents/travel-agent.md
-├── environments/travel-env.yaml
-├── travel_agent.py
-└── chat.py
+├── agents/
+│   └── travel-agent.md          ← new
+├── environments/
+│   └── travel-env.yaml          ← new
+├── claude-lock.json             ← made by ant apply
+├── travel_agent.py              ← new
+└── chat.py                      ← new
 ```
 
 ### 1.1 Describe the agent
@@ -328,6 +331,22 @@ Type *Hi! I'm thinking about a trip to Maui.*
 
 **Goal:** connect your agent to SerpApi's MCP server, so it can search live Google Flights prices, without your key ever entering the container.
 
+At the end of this milestone, your folder looks like this:
+
+```
+travel-agent/
+├── .env
+├── agents/
+│   └── travel-agent.md          ← updated
+├── environments/
+│   └── travel-env.yaml
+├── claude-lock.json
+├── make_vault.py                ← new
+├── vault.json                   ← made by make_vault.py
+├── travel_agent.py              ← updated
+└── chat.py
+```
+
 ### 2.1 Put your SerpApi key in a vault
 
 Create `make_vault.py`:
@@ -431,6 +450,29 @@ Ask something like *Flights from SFO to Maui on November 23, one way?* (use a da
 ## Milestone 3: Use my points
 
 **Goal:** give your agent a **custom tool** that reads the traveler's points from *your* app, then a **skill** that does the points math in its container.
+
+At the end of this milestone, your folder looks like this:
+
+```
+travel-agent/
+├── .env
+├── agents/
+│   └── travel-agent.md          ← updated
+├── environments/
+│   └── travel-env.yaml
+├── skills/
+│   └── points-advisor/          ← new
+│       ├── SKILL.md
+│       ├── award_price.py
+│       └── cpp.py
+├── claude-lock.json
+├── make_vault.py
+├── vault.json
+├── tools.py                     ← new
+├── points.json                  ← made by tools.py
+├── travel_agent.py              ← updated
+└── chat.py
+```
 
 ### 3.1 Write a custom tool
 
