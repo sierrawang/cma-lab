@@ -1,6 +1,6 @@
 # Reference solution
 
-The finished lab: Milestones 1–3 plus the "Ask before booking" extension. Try it yourself first!
+The finished lab: exactly what your folder looks like at the end of Milestone 3. Try it yourself first!
 
 To run it, follow the lab's *Before you start* steps, copy `.env` into this folder, set your name in `environments/travel-env.yaml`, then:
 
