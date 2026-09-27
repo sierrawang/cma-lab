@@ -10,6 +10,7 @@
 | [Milestone 1](#milestone-1-chat-with-your-agent) | Chat with your agent |
 | [Milestone 2](#milestone-2-find-real-flights) | Find real flights (MCP + vault) |
 | [Milestone 3](#milestone-3-use-my-points) | Use your points (skill + custom tool) |
+| [Check your understanding](#check-your-understanding) | Five short questions |
 | [Extensions](#extensions-optional) | Booking, hotels, memory, price alerts, a web app |
 
 Each step ends with "You know it worked when…" so you can check your progress as you go.
@@ -656,6 +657,55 @@ def run_turn(session_id, text):
 - *Should I use points for a flight from SFO to Maui on November 23?* shows `(bash…)` (the skill running in the container), and the reply mentions the cents per point.
 
 🎉 **You've built it:** an agent file, a container, sessions, an event loop, an MCP tool with a vault, a skill, and a custom tool.
+
+---
+
+## Check your understanding
+
+Five questions, about 5 minutes. Answer each one in a sentence or two, in your own words, before you open the example answer. Your session in the Console is fair game.
+
+**1.** You asked *Should I use points for a flight from SFO to Maui on November 23?* Open that session in the Console. For each step the agent took, where did it run: your computer, the container at Anthropic, or SerpApi's server?
+
+<details>
+<summary>Example answer</summary>
+
+- The flight search ran on **SerpApi's server**. Anthropic called it for the agent and added your key.
+- `get_points_balance` ran on **your computer**, in `tools.py`.
+- Reading `SKILL.md`, and running `compute_points.py` and `cpp.py`, happened in **the container** (the `(bash…)` lines).
+- Claude's thinking ran at Anthropic. Your app only ran the loop and `get_points_balance`.
+</details>
+
+**2.** `compute_points.py` and `get_points_balance` are both code the agent uses. Why is one part of a skill and the other a custom tool?
+
+<details>
+<summary>Example answer</summary>
+
+`compute_points.py` is plain math that needs nothing from your app, so it can run in the container. `get_points_balance` needs data only your app has (`points.json` on your computer), and the container can't see your computer. Rule of thumb: if the code needs your app's data, or needs a person, make it a custom tool.
+</details>
+
+**3.** Your SerpApi key is in a vault. Say you had pasted it into the system prompt instead. What could go wrong?
+
+<details>
+<summary>Example answer</summary>
+
+Claude would see the key, so it could repeat it in a reply or use it in a command. It would also be stored in your agent's settings, where anyone who can see the agent file or your workspace can read it. With a vault, Anthropic adds the key only when it calls SerpApi, so it never enters the conversation or the container.
+</details>
+
+**4.** In 3.4, your first loop broke. In your own words: what was the agent waiting for, and why did your next message cause an error?
+
+<details>
+<summary>Example answer</summary>
+
+The agent asked your app to run `get_points_balance`, then paused (`session.status_idle` with `requires_action`) until your app sent back a `user.custom_tool_result`. The old loop stopped at any idle, so it never sent one. Your next message failed because the session was still waiting for that result.
+</details>
+
+**5.** A teammate wants the agent to tell travelers the weather at their destination. Would you use an MCP server, a skill, a custom tool, or none of these? Why?
+
+<details>
+<summary>Example answer</summary>
+
+There's more than one good answer; the reasoning is what matters. Often you need **nothing new**: the built-in toolset already includes web search. If you want reliable, structured forecasts, connect a weather **MCP server**, with its key in the vault. A **custom tool** makes sense only if the weather comes from your own app. A **skill** makes sense if the agent needs know-how, like how to turn a forecast into packing advice.
+</details>
 
 ---
 
