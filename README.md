@@ -2,16 +2,15 @@
 
 **Time:** about 60 minutes
 
-**You'll build:** a travel agent that searches real flights, checks your points, and helps you book, running on Claude Managed Agents. You'll create every file yourself; this page shows you exactly what goes in each one.
+**You'll build:** a travel agent that searches real flights and works out whether to use your points, running on Claude Managed Agents. You'll create every file yourself; this page shows you exactly what goes in each one.
 
 | Part | What you'll do |
 |---|---|
 | [Before you start](#before-you-start) | Get your environment set up |
 | [Milestone 1](#milestone-1-chat-with-your-agent) | Chat with your agent |
 | [Milestone 2](#milestone-2-find-real-flights) | Find real flights (MCP + vault) |
-| [Milestone 3](#milestone-3-use-my-points) | Use your points (skill + custom tool) |
-| [Milestone 4](#milestone-4-ask-before-booking) | Ask before booking |
-| [Extensions](#extensions-optional) | Hotels, memory, price alerts, a web app |
+| [Milestone 3](#milestone-3-use-my-points) | Use your points (custom tool + skill) |
+| [Extensions](#extensions-optional) | Booking, hotels, memory, price alerts, a web app |
 
 Each step ends with **✅ You know it worked when…** so you can check your progress as you go.
 
@@ -431,66 +430,9 @@ Ask something like *Flights from SFO to Maui on November 23, one way?* (use a da
 
 ## Milestone 3: Use my points
 
-**Goal:** give your agent a **skill** that does points math in its container, and a **custom tool** that reads the traveler's points from *your* app.
+**Goal:** give your agent a **custom tool** that reads the traveler's points from *your* app, then a **skill** that does the points math in its container.
 
-### 3.1 Write the skill
-
-A skill is a folder with a `SKILL.md` and any scripts it needs. Create these three files.
-
-`skills/points-advisor/SKILL.md`:
-
-```markdown
----
-name: points-advisor
-description: Price a flight in miles and decide whether to pay with points or cash. Use whenever the traveler asks about points or miles.
----
-To price a flight in miles, run (FLIGHT_HOURS is the flight time, like 5.5):
-
-    python award_price.py FLIGHT_HOURS CABIN [round]
-
-CABIN is economy, premium, business, or first. These are sample prices, not live; always say so.
-
-Then work out what the points are worth:
-
-    python cpp.py CASH_PRICE MILES
-
-Using points is worth it at 1.3 cents per point or more. Put the cents-per-point number in your "Why:" line.
-```
-
-`skills/points-advisor/award_price.py`:
-
-```python
-"""Sample award prices from My Travel App's own chart (not real airline prices).
-Usage: python award_price.py FLIGHT_HOURS CABIN [round]"""
-import sys
-
-hours, cabin = float(sys.argv[1]), sys.argv[2].lower()
-base = 12500 if hours < 3 else 17500 if hours < 6 else 30000 if hours < 10 else 40000
-multiplier = {"economy": 1, "premium": 1.6, "business": 2.2, "first": 3}[cabin]
-trips = 2 if sys.argv[-1] == "round" else 1
-print(f"{round(base * multiplier * trips, -3):,.0f} miles, {cabin} (sample award price, not live)")
-```
-
-`skills/points-advisor/cpp.py`:
-
-```python
-"""Cents per point for paying with miles. Usage: python cpp.py CASH_PRICE MILES"""
-import sys
-
-cash, miles = float(sys.argv[1]), float(sys.argv[2])
-cents = cash / miles * 100
-verdict = "great" if cents >= 1.5 else "good" if cents >= 1.3 else "poor"
-print(f"{cents:.2f} cents per point ({verdict})")
-```
-
-Try a script yourself. It should print 35,000 miles:
-
-```bash
-python skills/points-advisor/award_price.py 5.5 economy round
-```
-
-
-### 3.2 Write a custom tool
+### 3.1 Write a custom tool
 
 Create `tools.py`. Custom tools run in **your** app. This one reads points from a file on your computer, which acts as the app's database:
 
@@ -512,9 +454,9 @@ def get_points_balance():
 TOOLS = {"get_points_balance": get_points_balance}
 ```
 
-### 3.3 Tell the agent about both
+### 3.2 Tell the agent about it
 
-In `agents/travel-agent.md`, add the custom tool at the end of `tools`, and a `skills` section after it. The end of the settings now looks like this. Claude only sees the tool's name and description; the code stays in your app.
+In `agents/travel-agent.md`, add the custom tool at the end of `tools`. The end of the settings now looks like this. Claude only sees the tool's name and description; the code stays in your app.
 
 ```yaml
   - type: mcp_toolset
@@ -525,20 +467,18 @@ In `agents/travel-agent.md`, add the custom tool at the end of `tools`, and a `s
     name: get_points_balance                   # new
     description: The traveler's airline and hotel points balances.  # new
     input_schema: {type: object}               # new
-skills:                                        # new
-  - ../skills/points-advisor                   # new
 ---
 ```
 
-Upload both (this also uploads the skill):
+Upload the change:
 
 ```bash
-ant apply agents/travel-agent.md skills/points-advisor
+ant apply agents/travel-agent.md
 ```
 
-✅ **You know it worked when** the plan shows `+ create` for the skill and `~ update` for the agent.
+✅ **You know it worked when** the plan shows `~ update` for your agent.
 
-### 3.4 Work it out: why does it break?
+### 3.3 Work it out: why does it break?
 
 Start the chat:
 
@@ -606,19 +546,108 @@ def run_turn(session_id, text):
 ```
 </details>
 
-✅ **You know it worked when**:
-- `How many points do I have?` shows `(your app runs get_points_balance…)` and lists your balances, and
-- `Should I use points for a flight from SFO to Maui on November 23?` shows `(bash…)` (the skill running in the container) and ends with a `Why:` line that has the cents per point.
+✅ **You know it worked when** *How many points do I have?* shows `(your app runs get_points_balance…)` and the reply lists your balances.
+
+### 3.4 Write a skill
+
+A skill is a folder with a `SKILL.md` and any scripts it needs. Create these three files.
+
+`skills/points-advisor/SKILL.md`:
+
+```markdown
+---
+name: points-advisor
+description: Price a flight in miles and decide whether to pay with points or cash. Use whenever the traveler asks about points or miles.
+---
+To price a flight in miles, run (FLIGHT_HOURS is the flight time, like 5.5):
+
+    python award_price.py FLIGHT_HOURS CABIN [round]
+
+CABIN is economy, premium, business, or first. These are sample prices, not live; always say so.
+
+Then work out what the points are worth:
+
+    python cpp.py CASH_PRICE MILES
+
+Using points is worth it at 1.3 cents per point or more. Put the cents-per-point number in your "Why:" line.
+```
+
+`skills/points-advisor/award_price.py`:
+
+```python
+"""Sample award prices from My Travel App's own chart (not real airline prices).
+Usage: python award_price.py FLIGHT_HOURS CABIN [round]"""
+import sys
+
+hours, cabin = float(sys.argv[1]), sys.argv[2].lower()
+base = 12500 if hours < 3 else 17500 if hours < 6 else 30000 if hours < 10 else 40000
+multiplier = {"economy": 1, "premium": 1.6, "business": 2.2, "first": 3}[cabin]
+trips = 2 if sys.argv[-1] == "round" else 1
+print(f"{round(base * multiplier * trips, -3):,.0f} miles, {cabin} (sample award price, not live)")
+```
+
+`skills/points-advisor/cpp.py`:
+
+```python
+"""Cents per point for paying with miles. Usage: python cpp.py CASH_PRICE MILES"""
+import sys
+
+cash, miles = float(sys.argv[1]), float(sys.argv[2])
+cents = cash / miles * 100
+verdict = "great" if cents >= 1.5 else "good" if cents >= 1.3 else "poor"
+print(f"{cents:.2f} cents per point ({verdict})")
+```
+
+Try a script yourself. It should print 35,000 miles:
+
+```bash
+python skills/points-advisor/award_price.py 5.5 economy round
+```
+
+
+### 3.5 Attach the skill to the agent
+
+In `agents/travel-agent.md`, add a `skills` section after `tools`:
+
+```yaml
+  - type: custom
+    name: get_points_balance
+    description: The traveler's airline and hotel points balances.
+    input_schema: {type: object}
+skills:                                        # new
+  - ../skills/points-advisor                   # new
+---
+```
+
+Upload the agent and the skill together:
+
+```bash
+ant apply agents/travel-agent.md skills/points-advisor
+```
+
+✅ **You know it worked when** the plan shows `+ create` for the skill and `~ update` for the agent, and then *Should I use points for a flight from SFO to Maui on November 23?* shows `(bash…)` (the skill running in the container) and ends with a `Why:` line that has the cents per point.
+
+🎉 **You've built it:** an agent file, a container, sessions, an event loop, an MCP tool with a vault, a custom tool, and a skill.
 
 ---
 
-## Milestone 4: Ask before booking
+## Extensions (optional)
 
-**Goal:** let the agent offer to book, but make a person decide, in your app.
+Each one is independent.
 
-### 4.1 Write the booking tool
+| Extension | What you'll learn | What to do |
+|---|---|---|
+| **Ask before booking** | A custom tool that waits for a person | See [below](#extension-ask-before-booking) |
+| **Hotels** | More from the same MCP server | Add a prompt line: "For hotels, search with the google_hotels engine (check-in, check-out, adults)." |
+| **Round trips** | Multi-step tool use | Add a prompt line: "For round trips, show outbound flights first; after the traveler picks one, search again with its departure_token to get return flights." |
+| **Remember trips** | Memory stores | Create `memory_stores/trips.yaml` with a `name` and a `description`, run `ant apply` on it, then pass `resources=[{"type": "memory_store", "memory_store_id": ...}]` in `start_session()` (the ID is in `claude-lock.json`). Ask the agent to save booked trips. |
+| **Price alerts** | Scheduled deployments | Write `agents/price-watcher.md` (with the MCP server, and no booking tool) and `deployments/price-check.md`, then run it once with `client.beta.deployments.run(...)`. Needs "Remember trips". |
+| **A web app** | Same agent, a different screen | Ask your instructor for the ready-made web UI (`web.py` + `static/`), which reuses your event loop. |
+| **Real miles prices** | A paid third-party API | Replace the sample chart with the seats.aero API (needs seats.aero Pro, about $10/month). |
 
-Add this function to `tools.py`, put `import webbrowser` at the top, and update `TOOLS`:
+### Extension: Ask before booking
+
+A second custom tool, with one twist: it stops and waits for a person. Add this function to `tools.py`, put `import webbrowser` at the top, and update `TOOLS`:
 
 ```python
 def book_flight(flight, price, link):
@@ -635,9 +664,7 @@ def book_flight(flight, price, link):
 TOOLS = {"get_points_balance": get_points_balance, "book_flight": book_flight}
 ```
 
-### 4.2 Tell the agent about it
-
-In `agents/travel-agent.md`, add it at the end of `tools` (above `skills:`):
+Add it at the end of `tools` in `agents/travel-agent.md` (above `skills:`):
 
 ```yaml
   - type: custom
@@ -664,39 +691,11 @@ Upload the change:
 ant apply agents/travel-agent.md
 ```
 
+Start the chat, ask for flights, pick one, and say *Book it.*
 
-### 4.3 Book a flight
-
-Start the chat:
-
-```bash
-python chat.py
-```
-
-Ask for flights, tell the agent which one you want, and say *Book it.*
-
-✅ **You know it worked when**:
-- your terminal asks `Open it on Google Flights to book? [y/n]`, and `y` opens the flight in your browser (don't actually buy it), and
-- answering `n` to `Did you finish booking?` makes the agent say nothing was booked.
+✅ **You know it worked when** your terminal asks `Open it on Google Flights to book? [y/n]`, `y` opens the flight in your browser (don't actually buy it), and answering `n` to `Did you finish booking?` makes the agent say nothing was booked.
 
 **Why it works this way:** `book_flight` is a custom tool, so it runs in your app, and your app can stop and wait for a person. The agent never sees payment details.
-
-🎉 **You've built it:** an agent file, a container, sessions, an event loop, an MCP tool with a vault, a skill, and two custom tools.
-
----
-
-## Extensions (optional)
-
-Each one is independent.
-
-| Extension | What you'll learn | What to do |
-|---|---|---|
-| **Hotels** | More from the same MCP server | Add a prompt line: "For hotels, search with the google_hotels engine (check-in, check-out, adults)." |
-| **Round trips** | Multi-step tool use | Add a prompt line: "For round trips, show outbound flights first; after the traveler picks one, search again with its departure_token to get return flights." |
-| **Remember trips** | Memory stores | Create `memory_stores/trips.yaml` with a `name` and a `description`, run `ant apply` on it, then pass `resources=[{"type": "memory_store", "memory_store_id": ...}]` in `start_session()` (the ID is in `claude-lock.json`). Ask the agent to save booked trips. |
-| **Price alerts** | Scheduled deployments | Write `agents/price-watcher.md` (with the MCP server, and no booking tool) and `deployments/price-check.md`, then run it once with `client.beta.deployments.run(...)`. Needs "Remember trips". |
-| **A web app** | Same agent, a different screen | Ask your instructor for the ready-made web UI (`web.py` + `static/`), which reuses your event loop. |
-| **Real miles prices** | A paid third-party API | Replace the sample chart with the seats.aero API (needs seats.aero Pro, about $10/month). |
 
 ---
 
@@ -709,7 +708,7 @@ Each one is independent.
 | `FileNotFoundError: … claude-lock.json` or `vault.json` | You're in the wrong folder, or skipped a step | `cd` into `travel-agent`, then redo 1.3 or 2.1 |
 | `mapping value is not allowed in this context` | A YAML line has `: ` inside text | Put that text in quotes |
 | `409` when uploading the environment | That environment name is taken | Use a unique name, e.g. `travel-env-yourname` |
-| `400 … waiting on responses to events` | The agent is waiting for a custom tool's result | See [3.4](#34-work-it-out-why-does-it-break) |
+| `400 … waiting on responses to events` | The agent is waiting for a custom tool's result | See [3.3](#33-work-it-out-why-does-it-break) |
 | Nothing happens for over a minute | A stalled request | Ctrl-C and run it again |
 | Your change to the agent doesn't show up | A running chat keeps the agent version it started with | Quit `chat.py` and start it again |
 
