@@ -199,7 +199,7 @@ tools:
 ---
 You are the travel agent inside My Travel App. You help travelers plan and book trips.
 Keep every reply to 1-3 short sentences, in plain text. No Markdown.
-When you recommend something, end with one line that starts with "Why:".
+When you recommend something, give the reason in one short sentence.
 ```
 
 `agent_toolset_20260401` is Anthropic's built-in toolset (bash, files, web search); the date is its version. Feel free to change the prompt.
@@ -273,7 +273,7 @@ Replace `pass` in `run_turn()` with a loop that:
 1. opens the event stream: `with client.beta.sessions.events.stream(session_id=session_id) as stream:`
 2. **then** sends the message: `send_message(session_id, text)`
 3. goes through each `event` in the stream:
-   - `agent.message`: print `event.content[0].text`
+   - `agent.message`: print the agent's reply, `event.content[0].text`, labeled so it stands out: `print(f"\nagent › {event.content[0].text}")`
    - `agent.tool_use` or `agent.mcp_tool_use`: print `f"  ({event.name}…)"`, so you can see what the agent is doing
    - `session.status_idle`: the agent is done, so `break`
 
@@ -286,7 +286,7 @@ def run_turn(session_id, text):
         send_message(session_id, text)
         for event in stream:
             if event.type == "agent.message":
-                print(event.content[0].text)
+                print(f"\nagent › {event.content[0].text}")
             elif event.type in ("agent.tool_use", "agent.mcp_tool_use"):
                 print(f"  ({event.name}…)")
             elif event.type == "session.status_idle":
@@ -404,7 +404,7 @@ tools:
 ---
 You are the travel agent inside My Travel App. You help travelers plan and book trips.
 Keep every reply to 1-3 short sentences, in plain text. No Markdown.
-When you recommend something, end with one line that starts with "Why:".
+When you recommend something, give the reason in one short sentence.
 Search real flights before quoting any price. Never guess prices.
 Search with mode "complete", so results include google_flights_url.
 ```
@@ -573,7 +573,7 @@ def run_turn(session_id, text):
         pending = []
         for event in stream:
             if event.type == "agent.message":
-                print(event.content[0].text)
+                print(f"\nagent › {event.content[0].text}")
             elif event.type in ("agent.tool_use", "agent.mcp_tool_use"):
                 print(f"  ({event.name}…)")
             elif event.type == "agent.custom_tool_use":
@@ -613,7 +613,7 @@ Then work out what the points are worth:
 
     python cpp.py CASH_PRICE MILES
 
-Using points is worth it at 1.3 cents per point or more. Put the cents-per-point number in your "Why:" line.
+Using points is worth it at 1.3 cents per point or more. Mention the cents per point when you recommend points or cash.
 ```
 
 `skills/points-advisor/award_price.py`:
@@ -669,7 +669,7 @@ Upload the agent and the skill together:
 ant apply agents/travel-agent.md skills/points-advisor
 ```
 
-✅ **You know it worked when** the plan shows `+ create` for the skill and `~ update` for the agent, and then *Should I use points for a flight from SFO to Maui on November 23?* shows `(bash…)` (the skill running in the container) and ends with a `Why:` line that has the cents per point.
+✅ **You know it worked when** the plan shows `+ create` for the skill and `~ update` for the agent, and then *Should I use points for a flight from SFO to Maui on November 23?* shows `(bash…)` (the skill running in the container) and the reply mentions the cents per point.
 
 🎉 **You've built it:** an agent file, a container, sessions, an event loop, an MCP tool with a vault, a custom tool, and a skill.
 

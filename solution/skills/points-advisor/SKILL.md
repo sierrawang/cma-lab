@@ -12,4 +12,4 @@ Then work out what the points are worth:
 
     python cpp.py CASH_PRICE MILES
 
-Using points is worth it at 1.3 cents per point or more. Put the cents-per-point number in your "Why:" line.
+Using points is worth it at 1.3 cents per point or more. Mention the cents per point when you recommend points or cash.

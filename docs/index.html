@@ -186,7 +186,7 @@ tools:
 ---
 You are the travel agent inside My Travel App. You help travelers plan and book trips.
 Keep every reply to 1-3 short sentences, in plain text. No Markdown.
-When you recommend something, end with one line that starts with &quot;Why:&quot;.
+When you recommend something, give the reason in one short sentence.
 </code></pre></div>
 <p><code>agent_toolset_20260401</code> is Anthropic's built-in toolset (bash, files, web search); the date is its version. Feel free to change the prompt.</p>
 <h3 id="12-describe-its-container">1.2 Describe its container</h3>
@@ -240,7 +240,7 @@ def run_turn(session_id, text):
 <li>opens the event stream: <code>with client.beta.sessions.events.stream(session_id=session_id) as stream:</code></li>
 <li><strong>then</strong> sends the message: <code>send_message(session_id, text)</code></li>
 <li>goes through each <code>event</code> in the stream:
-   - <code>agent.message</code>: print <code>event.content[0].text</code>
+   - <code>agent.message</code>: print the agent's reply, <code>event.content[0].text</code>, labeled so it stands out: <code>print(f"\nagent › {event.content[0].text}")</code>
    - <code>agent.tool_use</code> or <code>agent.mcp_tool_use</code>: print <code>f"  ({event.name}…)"</code>, so you can see what the agent is doing
    - <code>session.status_idle</code>: the agent is done, so <code>break</code></li>
 </ol>
@@ -249,7 +249,7 @@ def run_turn(session_id, text):
         send_message(session_id, text)
         for event in stream:
             if event.type == &quot;agent.message&quot;:
-                print(event.content[0].text)
+                print(f&quot;\nagent › {event.content[0].text}&quot;)
             elif event.type in (&quot;agent.tool_use&quot;, &quot;agent.mcp_tool_use&quot;):
                 print(f&quot;  ({event.name}…)&quot;)
             elif event.type == &quot;session.status_idle&quot;:
@@ -340,7 +340,7 @@ tools:
 ---
 You are the travel agent inside My Travel App. You help travelers plan and book trips.
 Keep every reply to 1-3 short sentences, in plain text. No Markdown.
-When you recommend something, end with one line that starts with &quot;Why:&quot;.
+When you recommend something, give the reason in one short sentence.
 Search real flights before quoting any price. Never guess prices.
 Search with mode &quot;complete&quot;, so results include google_flights_url.
 </code></pre></div>
@@ -448,7 +448,7 @@ TOOLS = {&quot;get_points_balance&quot;: get_points_balance}
         pending = []
         for event in stream:
             if event.type == &quot;agent.message&quot;:
-                print(event.content[0].text)
+                print(f&quot;\nagent › {event.content[0].text}&quot;)
             elif event.type in (&quot;agent.tool_use&quot;, &quot;agent.mcp_tool_use&quot;):
                 print(f&quot;  ({event.name}…)&quot;)
             elif event.type == &quot;agent.custom_tool_use&quot;:
@@ -481,7 +481,7 @@ Then work out what the points are worth:
 
     python cpp.py CASH_PRICE MILES
 
-Using points is worth it at 1.3 cents per point or more. Put the cents-per-point number in your &quot;Why:&quot; line.
+Using points is worth it at 1.3 cents per point or more. Mention the cents per point when you recommend points or cash.
 </code></pre></div>
 <p><code>skills/points-advisor/award_price.py</code>:</p>
 <div class="code"><span class="lang">Python</span><button class="copy" aria-label="Copy">Copy</button><pre><code>&quot;&quot;&quot;Sample award prices from My Travel App's own chart (not real airline prices).
@@ -519,7 +519,7 @@ skills:                                        # new
 <p>Upload the agent and the skill together:</p>
 <div class="code"><span class="lang">Terminal</span><button class="copy" aria-label="Copy">Copy</button><pre><code>ant apply agents/travel-agent.md skills/points-advisor
 </code></pre></div>
-<div class="check"><p><strong>You know it worked when</strong> the plan shows <code>+ create</code> for the skill and <code>~ update</code> for the agent, and then <em>Should I use points for a flight from SFO to Maui on November 23?</em> shows <code>(bash…)</code> (the skill running in the container) and ends with a <code>Why:</code> line that has the cents per point.</p></div><p>🎉 <strong>You've built it:</strong> an agent file, a container, sessions, an event loop, an MCP tool with a vault, a custom tool, and a skill.</p>
+<div class="check"><p><strong>You know it worked when</strong> the plan shows <code>+ create</code> for the skill and <code>~ update</code> for the agent, and then <em>Should I use points for a flight from SFO to Maui on November 23?</em> shows <code>(bash…)</code> (the skill running in the container) and the reply mentions the cents per point.</p></div><p>🎉 <strong>You've built it:</strong> an agent file, a container, sessions, an event loop, an MCP tool with a vault, a custom tool, and a skill.</p>
 
 <div class="finish"><button class="mark" data-id="milestone-3-use-my-points">Mark “Milestone 3: Use my points” as done</button></div></section><section id="sec-extensions-optional"><h2 id="extensions-optional">Extensions (optional)</h2>
 <p>Each one is independent.</p>

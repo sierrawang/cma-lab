@@ -44,7 +44,7 @@ def run_turn(session_id, text):
         pending = []
         for event in stream:
             if event.type == "agent.message":
-                print(event.content[0].text)
+                print(f"\nagent › {event.content[0].text}")
             elif event.type in ("agent.tool_use", "agent.mcp_tool_use"):
                 print(f"  ({event.name}…)")
             elif event.type == "agent.custom_tool_use":
